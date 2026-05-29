@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 이력서·자소서 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --navy: #0f2340; --navy2: #162d4a; --navy3: #1e3a5f;
+            --accent: #3b82f6; --accent2: #60a5fa;
+            --bg: #f0f4f8; --surface: #ffffff;
+            --border: #dce8f0; --text: #1a2a3a; --text-sub: #6b7f96;
+            --green: #16a34a; --yellow: #b45309; --red: #ef4444;
+            --teal: #0f766e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* ── 헤더 ── */
+        header { background: var(--navy); padding: 0 48px; height: 62px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; box-shadow: 0 1px 0 rgba(255,255,255,.06); }
+        .logo { color: white; font-size: 1.15rem; font-weight: 900; letter-spacing: 5px; text-decoration: none; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .user-chip { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 100px; padding: 4px 14px 4px 5px; }
+        .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; }
+        .user-name { color: rgba(255,255,255,.8); font-size: 13px; font-weight: 500; }
+        .hamburger { width: 38px; height: 38px; border-radius: 9px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+        .hamburger span { display: block; width: 16px; height: 1.5px; background: rgba(255,255,255,.8); border-radius: 2px; transition: all .3s; }
+        .hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+        .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+        /* ── 드로어 ── */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; opacity: 0; visibility: hidden; transition: all .3s; }
+        .drawer-overlay.open { opacity: 1; visibility: visible; }
+        .drawer { position: fixed; top: 0; right: -300px; width: 280px; height: 100vh; background: white; z-index: 400; display: flex; flex-direction: column; transition: right .32s cubic-bezier(.34,1.56,.64,1); box-shadow: -6px 0 32px rgba(0,0,0,.12); }
+        .drawer.open { right: 0; }
+        .drawer-header { background: var(--navy); padding: 22px 20px 18px; position: relative; flex-shrink: 0; }
+        .drawer-logo { color: white; font-size: .95rem; font-weight: 900; letter-spacing: 4px; margin-bottom: 14px; }
+        .drawer-user { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.08); border-radius: 10px; padding: 10px 13px; }
+        .d-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0; }
+        .d-name { color: white; font-size: 13.5px; font-weight: 700; }
+        .d-sub { color: rgba(255,255,255,.45); font-size: 11px; margin-top: 1px; }
+        .drawer-close { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 7px; background: rgba(255,255,255,.1); border: none; color: white; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .drawer-nav { flex: 1; padding: 10px; overflow-y: auto; }
+        .drawer-section-label { font-size: 10px; font-weight: 700; color: var(--text-sub); letter-spacing: 2px; text-transform: uppercase; padding: 10px 12px 5px; }
+        .drawer-item { display: flex; align-items: center; gap: 11px; padding: 10px 13px; border-radius: 10px; font-size: 13.5px; font-weight: 600; color: var(--text); cursor: pointer; text-decoration: none; transition: all .18s; margin-bottom: 2px; }
+        .drawer-item:hover { background: #f0f4f8; color: var(--navy); }
+        .drawer-item.active { background: #eef4ff; color: var(--navy); }
+        .d-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .d-icon svg { width: 17px; height: 17px; }
+        .d-icon.blue { background: #dbeafe; } .d-icon.green { background: #dcfce7; } .d-icon.yellow { background: #fef3c7; }
+        .d-icon.purple { background: #f3e8ff; } .d-icon.pink { background: #fce7f3; } .d-icon.indigo { background: #e0e7ff; }
+        .d-icon.orange { background: #fff7ed; } .d-icon.note { background: #f5f3ff; } .d-icon.teal { background: #ccfbf1; }
+        .item-text { flex: 1; }
+        .item-desc { font-size: 11px; color: var(--text-sub); font-weight: 400; margin-top: 1px; }
+        .drawer-divider { height: 1px; background: var(--border); margin: 7px 12px; }
+        .drawer-footer { padding: 14px 10px; border-top: 1px solid var(--border); flex-shrink: 0; }
+        .btn-logout-drawer { width: 100%; padding: 11px; border-radius: 10px; background: #fee2e2; color: #dc2626; border: 1.5px solid #fecaca; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-logout-drawer:hover { background: #fecaca; }
+
+        /* ── 메인 ── */
+        main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+        .page-title-wrap h1 { font-size: 22px; font-weight: 800; color: var(--navy); display: flex; align-items: center; gap: 10px; }
+        .page-title-wrap p { font-size: 14px; color: var(--text-sub); margin-top: 4px; }
+        .btn-primary { display: flex; align-items: center; gap: 8px; background: var(--navy); color: white; border: none; border-radius: 10px; padding: 12px 22px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; }
+        .btn-primary:hover { background: var(--navy3); transform: translateY(-1px); }
+
+        /* ── 탭 ── */
+        .page-tabs { display: flex; gap: 4px; margin-bottom: 28px; background: white; border-radius: 12px; padding: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 1px solid var(--border); width: fit-content; }
+        .ptab { padding: 9px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--text-sub); font-family: inherit; transition: all .2s; display: flex; align-items: center; gap: 7px; }
+        .ptab.active { background: var(--navy); color: white; }
+        .ptab:hover:not(.active) { background: var(--bg); color: var(--navy); }
+
+        /* ── 통계 카드 ── */
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+        .stat-card { background: white; border-radius: 14px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); display: flex; align-items: center; gap: 16px; border: 1px solid var(--border); }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .stat-icon.blue { background: #eff6ff; } .stat-icon.green { background: #ecfdf5; } .stat-icon.yellow { background: #fffbeb; }
+        .stat-num { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
+        .stat-label { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
+
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .section-title { font-size: 16px; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+        .count-badge { background: var(--navy); color: white; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+
+        /* ── 빈 상태 ── */
+        .empty-state { background: white; border-radius: 14px; border: 2px dashed var(--border); padding: 64px 24px; text-align: center; }
+        .empty-icon { font-size: 52px; margin-bottom: 16px; opacity: .4; }
+        .empty-state h3 { font-size: 18px; font-weight: 700; color: #64748b; margin-bottom: 8px; }
+        .empty-state p { font-size: 14px; color: #94a3b8; margin-bottom: 24px; }
+        .btn-outline { display: inline-flex; align-items: center; gap: 8px; border: 2px solid var(--navy); color: var(--navy); background: transparent; border-radius: 10px; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; }
+        .btn-outline:hover { background: var(--navy); color: white; }
+
+        /* ── 자소서 카드 ── */
+        .cl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .cl-card { background: white; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.08); overflow: hidden; transition: all .2s; cursor: pointer; }
+        .cl-card:hover { transform: translateY(-3px); box-shadow: 0 4px 16px rgba(0,0,0,.08); border-color: var(--accent); }
+        .cl-card-top { padding: 20px 20px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .cl-company-badge { display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; color: var(--accent); font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; margin-bottom: 8px; }
+        .cl-title { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 6px; line-height: 1.4; }
+        .cl-job { font-size: 13px; color: var(--text-sub); margin-bottom: 12px; }
+        .cl-body { font-size: 13px; color: #64748b; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0 20px 16px; }
+        .cl-card-bottom { padding: 12px 20px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+        .cl-date { font-size: 12px; color: #94a3b8; }
+        .cl-actions { display: flex; gap: 8px; }
+        .btn-sm { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; border: none; font-family: inherit; }
+        .btn-sm.ai { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-sm.ai:hover { opacity: .9; transform: translateY(-1px); }
+        .btn-sm.edit { background: #f1f5f9; color: #475569; }
+        .btn-sm.edit:hover { background: #e2e8f0; }
+        .btn-sm.del { background: #fef2f2; color: var(--red); }
+        .btn-sm.del:hover { background: #fecaca; }
+        .feedback-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 5px; }
+        .feedback-badge.done { background: #ecfdf5; color: var(--green); }
+        .feedback-badge.none { background: #f1f5f9; color: #64748b; }
+
+        /* ── 이력서 섹션 ── */
+        .resume-panel { display: none; }
+        .resume-panel.show { display: block; }
+        .cl-panel { display: block; }
+        .cl-panel.hide { display: none; }
+
+        .resume-upload-area { background: white; border: 2px dashed var(--border); border-radius: 14px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all .2s; margin-bottom: 20px; }
+        .resume-upload-area:hover, .resume-upload-area.dragover { border-color: var(--accent); background: #eff6ff; }
+        .upload-icon { font-size: 48px; margin-bottom: 12px; opacity: .5; }
+        .upload-title { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+        .upload-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 16px; }
+        .upload-hint { font-size: 12px; color: #94a3b8; }
+        .upload-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--navy); color: white; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .2s; margin-bottom: 12px; }
+        .upload-btn:hover { background: var(--navy3); }
+        #resumeFileInput { display: none; }
+
+        .resume-list { display: flex; flex-direction: column; gap: 12px; }
+        .resume-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 18px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); transition: all .2s; }
+        .resume-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.08); }
+        .resume-file-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .resume-file-icon.pdf { background: #fef2f2; }
+        .resume-file-icon.doc { background: #eff6ff; }
+        .resume-file-icon.hwp { background: #ecfdf5; }
+        .resume-info { flex: 1; min-width: 0; }
+        .resume-name { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .resume-meta { font-size: 12px; color: var(--text-sub); display: flex; gap: 12px; flex-wrap: wrap; }
+        .resume-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 5px; }
+        .resume-badge.main { background: #ecfdf5; color: var(--green); }
+        .resume-badge.sub { background: #f1f5f9; color: #64748b; }
+        .resume-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .btn-sm.main-set { background: #eff6ff; color: var(--accent); }
+        .btn-sm.main-set:hover { background: #dbeafe; }
+        .btn-sm.download { background: #f0fdf4; color: var(--green); }
+        .btn-sm.download:hover { background: #dcfce7; }
+
+        .resume-tips { background: linear-gradient(135deg, #eff6ff, #f0fdf4); border-radius: 14px; padding: 20px 24px; border: 1px solid #bfdbfe; margin-top: 24px; }
+        .tips-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .tips-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .tip-item { font-size: 13px; color: #475569; display: flex; align-items: flex-start; gap: 7px; }
+        .tip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 5px; }
+
+        /* ── 모달 공통 ── */
+        .modal-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity .25s; }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal { background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,.12); width: 100%; transform: translateY(20px); transition: transform .25s; max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-overlay.open .modal { transform: translateY(0); }
+        .modal-header { padding: 24px 28px 0; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .modal-title { font-size: 20px; font-weight: 800; color: var(--navy); }
+        .modal-close { width: 36px; height: 36px; border-radius: 8px; background: #f1f5f9; border: none; font-size: 20px; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+        .modal-close:hover { background: #e2e8f0; }
+        .modal-body { padding: 20px 28px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 16px 28px 24px; display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; border-top: 1px solid #f1f5f9; }
+
+        /* ── 폼 ── */
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+        .form-label span { color: var(--red); margin-left: 2px; }
+        .form-input, .form-textarea { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; color: var(--text); background: white; transition: border-color .2s, box-shadow .2s; outline: none; }
+        .form-input:focus, .form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+        .form-textarea { resize: vertical; line-height: 1.7; min-height: 180px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .char-count { font-size: 11px; color: #94a3b8; text-align: right; margin-top: 4px; }
+        .btn-cancel { padding: 11px 22px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; background: #f1f5f9; color: #475569; border: none; }
+        .btn-cancel:hover { background: #e2e8f0; }
+        .btn-save { padding: 11px 28px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: inherit; background: var(--navy); color: white; border: none; }
+        .btn-save:hover { background: var(--navy3); }
+        .btn-save:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* ── AI 피드백 모달 ── */
+        .feedback-modal { max-width: 780px; }
+        .cl-info-bar { background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; display: flex; gap: 20px; flex-wrap: wrap; }
+        .cl-info-item { font-size: 13px; color: #64748b; }
+        .cl-info-item strong { color: var(--navy); }
+        .feedback-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; }
+        .ftab { padding: 10px 18px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; font-family: inherit; }
+        .ftab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .feedback-loading { text-align: center; padding: 48px 24px; display: none; }
+        .feedback-loading.show { display: block; }
+        .spinner { width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--accent); animation: spin .9s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 14px; color: #64748b; }
+        .loading-sub { font-size: 12px; color: #94a3b8; margin-top: 6px; }
+        .feedback-content { display: none; }
+        .feedback-content.show { display: block; }
+        .md-render h2 { font-size: 16px; font-weight: 700; color: var(--navy); margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #f1f5f9; }
+        .md-render h3 { font-size: 14px; font-weight: 700; color: #475569; margin: 14px 0 6px; }
+        .md-render p { font-size: 14px; line-height: 1.75; color: #475569; margin-bottom: 10px; }
+        .md-render ul { padding-left: 18px; margin-bottom: 12px; }
+        .md-render li { font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 4px; }
+        .md-render strong { color: var(--navy); font-weight: 700; }
+        .md-render blockquote { border-left: 4px solid var(--accent); padding: 10px 16px; background: #eff6ff; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; color: #475569; }
+        .score-box { background: linear-gradient(135deg, var(--navy), var(--navy3)); border-radius: 12px; padding: 20px 24px; margin-top: 20px; display: flex; align-items: center; justify-content: space-between; color: white; }
+        .score-label { font-size: 14px; opacity: .8; }
+        .score-num { font-size: 36px; font-weight: 900; }
+        .score-sub { font-size: 12px; opacity: .6; margin-top: 2px; }
+        .original-content { background: #f8fafc; border-radius: 10px; padding: 16px; font-size: 14px; line-height: 1.75; color: #475569; white-space: pre-wrap; border: 1px solid var(--border); max-height: 360px; overflow-y: auto; display: none; }
+        .original-content.show { display: block; }
+        .write-modal { max-width: 700px; }
+
+        /* ── 토스트 ── */
+        .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e293b; color: white; padding: 12px 20px; border-radius: 10px; font-size: 14px; box-shadow: 0 8px 32px rgba(0,0,0,.12); z-index: 999; transition: transform .3s; pointer-events: none; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: var(--green); }
+        .toast.error { background: var(--red); }
+
+        @media (max-width: 640px) {
+            header { padding: 0 16px; }
+            main { padding: 24px 16px 60px; }
+            .stats-row { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .cl-grid { grid-template-columns: 1fr; }
+            .user-chip { display: none; }
+            .tips-list { grid-template-columns: 1fr; }
+            .resume-actions { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        <div class="drawer-logo">JOBMATE</div>
+        <div class="drawer-user">
+            <div class="d-avatar" id="drawerAvatar">?</div>
+            <div><div class="d-name" id="drawerUserName">불러오는 중...</div><div class="d-sub">로그인됨</div></div>
+        </div>
+    </div>
+    <nav class="drawer-nav">
+        <div class="drawer-section-label">메인 메뉴</div>
+        <a class="drawer-item" href="/dashboard">
+            <div class="d-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+            <div class="item-text"><div>대시보드</div><div class="item-desc">홈 화면으로 이동</div></div>
+        </a>
+        <a class="drawer-item" href="/jobs">
+            <div class="d-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+            <div class="item-text"><div>공고 매칭</div><div class="item-desc">맞춤 채용공고 확인</div></div>
+        </a>
+        <a class="drawer-item" href="/community">
+            <div class="d-icon indigo"><svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="item-text"><div>커뮤니티</div><div class="item-desc">개발자들과 소통하기</div></div>
+        </a>
+        <a class="drawer-item" href="/interview">
+            <div class="d-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <div class="item-text"><div>면접 코칭</div><div class="item-desc">AI 면접 질문 &amp; 피드백</div></div>
+        </a>
+        <a class="drawer-item" href="/interview-notes">
+            <div class="d-icon note"><svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+            <div class="item-text"><div>면접 오답노트</div><div class="item-desc">면접 질문·피드백 복습</div></div>
+        </a>
+        <a class="drawer-item active" href="/cover-letter">
+            <div class="d-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="12" y1="9" x2="8" y2="9"/></svg></div>
+            <div class="item-text"><div>이력서 · 자소서 관리</div><div class="item-desc">AI 피드백으로 자소서를 개선하세요</div></div>
+        </a>
+        <a class="drawer-item" href="/account">
+            <div class="d-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div>
+            <div class="item-text"><div>맞춤 정보 설정</div><div class="item-desc">직무·기술스택·지역·연봉 설정</div></div>
+        </a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">설정</div>
+        <a class="drawer-item" href="/account">
+            <div class="d-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div class="item-text"><div>계정 관리</div><div class="item-desc">비밀번호·개인정보 변경</div></div>
+        </a>
+    </nav>
+    <div class="drawer-footer">
+        <button class="btn-logout-drawer" onclick="logout()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            로그아웃
+        </button>
+    </div>
+</div>
+
+<header>
+    <a class="logo" href="/dashboard">JOBMATE</a>
+    <div class="header-right">
+        <div class="user-chip">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <span class="user-name" id="userName">불러오는 중...</span>
+        </div>
+        <div class="hamburger" id="hamburger" onclick="toggleDrawer()"><span></span><span></span><span></span></div>
+    </div>
+</header>
+
+<main>
+    <div class="page-header">
+        <div class="page-title-wrap">
+            <h1>📄 이력서 · 자소서 관리</h1>
+            <p>이력서를 관리하고 자소서에 Groq AI 피드백을 받아보세요</p>
+        </div>
+        <button class="btn-primary" id="headerActionBtn" onclick="headerAction()">
+            <span style="font-size:18px">+</span> 새 자소서 작성
+        </button>
+    </div>
+
+    <!-- 탭 -->
+    <div class="page-tabs">
+        <button class="ptab active" onclick="switchPageTab('resume', this)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            이력서 관리
+        </button>
+        <button class="ptab" onclick="switchPageTab('cl', this)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            자소서 관리
+        </button>
+    </div>
+
+    <!-- ══ 자소서 패널 ══ -->
+    <div class="cl-panel hide" id="clPanel">
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon blue">📄</div>
+                <div><div class="stat-num" id="statTotal">0</div><div class="stat-label">전체 자소서</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">🤖</div>
+                <div><div class="stat-num" id="statFeedback">0</div><div class="stat-label">AI 피드백 완료</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon yellow">⏳</div>
+                <div><div class="stat-num" id="statPending">0</div><div class="stat-label">피드백 대기</div></div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <div class="section-title">
+                📝 내 자소서 목록
+                <span class="count-badge" id="listCount">0</span>
+            </div>
+        </div>
+        <div id="clList"></div>
+    </div>
+
+    <!-- ══ 이력서 패널 ══ -->
+    <div class="resume-panel show" id="resumePanel">
+
+        <!-- 업로드 영역 -->
+        <div class="resume-upload-area" id="uploadArea"
+             onclick="document.getElementById('resumeFileInput').click()"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event)">
+            <div class="upload-icon">📂</div>
+            <div class="upload-title">이력서 파일을 업로드하세요</div>
+            <div class="upload-desc">드래그 &amp; 드롭하거나 버튼을 클릭해서 파일을 선택하세요</div>
+            <button class="upload-btn" onclick="event.stopPropagation(); document.getElementById('resumeFileInput').click()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                파일 선택
+            </button>
+            <div class="upload-hint">지원 형식: PDF, DOC, DOCX, HWP · 최대 10MB</div>
+            <input type="file" id="resumeFileInput" accept=".pdf,.doc,.docx,.hwp" onchange="handleFileSelect(event)">
+        </div>
+
+        <!-- 이력서 목록 -->
+        <div class="section-header">
+            <div class="section-title">
+                📋 내 이력서 목록
+                <span class="count-badge" id="resumeCount">0</span>
+            </div>
+        </div>
+        <div id="resumeList">
+            <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <h3>등록된 이력서가 없어요</h3>
+                <p>위 영역에 파일을 드래그하거나 클릭해서 업로드하세요</p>
+            </div>
+        </div>
+
+        <!-- 이력서 작성 팁 -->
+        <div class="resume-tips">
+            <div class="tips-title">💡 이력서 작성 팁</div>
+            <div class="tips-list">
+                <div class="tip-item"><div class="tip-dot"></div>직무와 관련된 프로젝트 경험을 구체적인 수치로 작성하세요</div>
+                <div class="tip-item"><div class="tip-dot"></div>기술 스택은 숙련도 순서로 나열하고 실제 사용 경험을 명시하세요</div>
+                <div class="tip-item"><div class="tip-dot"></div>PDF 형식으로 제출하면 서식이 깨지지 않아 안전합니다</div>
+                <div class="tip-item"><div class="tip-dot"></div>파일명에 이름과 날짜를 포함시키면 관리가 편리합니다</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ══ 자소서 작성/수정 모달 ══ -->
+<div class="modal-overlay" id="writeModal">
+    <div class="modal write-modal">
+        <div class="modal-header">
+            <span class="modal-title" id="writeModalTitle">✍️ 새 자소서 작성</span>
+            <button class="modal-close" onclick="closeWriteModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">지원 회사명 <span>*</span></label>
+                    <input type="text" id="fCompanyName" class="form-input" placeholder="예: 삼성전자, 카카오, 네이버">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">지원 직무 <span>*</span></label>
+                    <input type="text" id="fJobTitle" class="form-input" placeholder="예: 백엔드 개발자, 프론트엔드">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">자소서 제목 <span>*</span></label>
+                <input type="text" id="fTitle" class="form-input" placeholder="예: 삼성전자 백엔드 개발자 지원 자기소개서">
+            </div>
+            <div class="form-group">
+                <label class="form-label">자소서 본문 <span>*</span></label>
+                <textarea id="fContent" class="form-textarea" rows="10"
+                    placeholder="자소서 내용을 입력하세요. AI가 잘된 점, 개선할 점, 수정 제안, 종합 평가를 제공합니다."
+                    oninput="updateCharCount()"></textarea>
+                <div class="char-count"><span id="charCount">0</span>자</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeWriteModal()">취소</button>
+            <button class="btn-save" id="btnSave" onclick="saveCoverLetter()">저장하기</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ AI 피드백 모달 ══ -->
+<div class="modal-overlay" id="feedbackModal">
+    <div class="modal feedback-modal">
+        <div class="modal-header">
+            <span class="modal-title">🤖 AI 피드백</span>
+            <button class="modal-close" onclick="closeFeedbackModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="cl-info-bar" id="fbInfoBar"></div>
+            <div class="feedback-tabs">
+                <button class="ftab active" onclick="switchTab('feedback')">AI 피드백</button>
+                <button class="ftab" onclick="switchTab('original')">원문 보기</button>
+            </div>
+            <div class="feedback-loading" id="fbLoading">
+                <div class="spinner"></div>
+                <p class="loading-text">Groq AI가 자소서를 분석하고 있습니다...</p>
+                <p class="loading-sub">잘된 점, 개선할 점, 수정 제안을 생성 중입니다</p>
+            </div>
+            <div class="feedback-content" id="fbContent">
+                <div class="md-render" id="fbMarkdown"></div>
+                <div class="score-box" id="fbScoreBox" style="display:none">
+                    <div>
+                        <div class="score-label">AI 종합 평가 점수</div>
+                        <div class="score-sub">Groq llama-3.3-70b 기준</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div class="score-num"><span id="fbScore">-</span><span style="font-size:18px;opacity:.6">/100</span></div>
+                    </div>
+                </div>
+            </div>
+            <pre class="original-content" id="fbOriginal"></pre>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeFeedbackModal()">닫기</button>
+            <button class="btn-save" id="btnGetFeedback" onclick="requestFeedback()">🤖 AI 피드백 받기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let coverLetters = [];
+    let resumeFiles = [];
+    let currentCl = null;
+    let currentMemberId = 1;
+    let currentPageTab = 'cl';
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        await loadMemberInfo();
+        await loadCoverLetters();
+        loadResumes();
+    });
+
+    // ── 페이지 탭 전환 ──
+    function switchPageTab(tab, el) {
+        currentPageTab = tab;
+        document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+
+        if (tab === 'resume') {
+            document.getElementById('clPanel').classList.add('hide');
+            document.getElementById('resumePanel').classList.add('show');
+            document.getElementById('headerActionBtn').textContent = '+ 이력서 업로드';
+        } else {
+            document.getElementById('clPanel').classList.remove('hide');
+            document.getElementById('resumePanel').classList.remove('show');
+            document.getElementById('headerActionBtn').textContent = '+ 새 자소서 작성';
+        }
+    }
+
+    function headerAction() {
+        if (currentPageTab === 'cl') openWriteModal();
+        else document.getElementById('resumeFileInput').click();
+    }
+
+    // ── 멤버 정보 ──
+    async function loadMemberInfo() {
+        try {
+            const res = await fetch('/api/members/me');
+            if (!res.ok) { location.href = '/'; return; }
+            const data = await res.json();
+            const name = data.name || data.email || '사용자';
+            document.getElementById('userName').textContent = name + '님';
+            document.getElementById('userAvatar').textContent = name.charAt(0);
+            document.getElementById('drawerUserName').textContent = name + '님';
+            document.getElementById('drawerAvatar').textContent = name.charAt(0);
+            if (data.id) currentMemberId = data.id;
+        } catch(e) { location.href = '/'; }
+    }
+
+    // ── 자소서 ──
+    async function loadCoverLetters() {
+        try {
+            const res = await fetch('/api/cover-letters');
+            if (!res.ok) throw new Error();
+            coverLetters = await res.json();
+        } catch(e) { coverLetters = []; }
+        renderList();
+        renderStats();
+    }
+
+    function renderStats() {
+        const total = coverLetters.length;
+        const done = coverLetters.filter(c => c.aiFeedback).length;
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statFeedback').textContent = done;
+        document.getElementById('statPending').textContent = total - done;
+        document.getElementById('listCount').textContent = total;
+    }
+
+    function renderList() {
+        const container = document.getElementById('clList');
+        if (coverLetters.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <h3>아직 작성한 자소서가 없어요</h3>
+                    <p>첫 자소서를 작성하고 AI 피드백을 받아보세요!</p>
+                    <button class="btn-outline" onclick="openWriteModal()"><span>+</span> 자소서 작성하기</button>
+                </div>`;
+            return;
+        }
+        const cards = coverLetters.map(cl => {
+            const hasFb = !!cl.aiFeedback;
+            const dateStr = cl.createdAt ? new Date(cl.createdAt).toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric'}) : '';
+            return `
+            <div class="cl-card" onclick="openFeedbackModal(${cl.id})">
+                <div class="cl-card-top">
+                    <div style="flex:1;min-width:0">
+                        <div class="cl-company-badge">🏢 ${esc(cl.companyName || '회사명 없음')}</div>
+                        <div class="cl-title">${esc(cl.title)}</div>
+                        <div class="cl-job">📌 ${esc(cl.jobTitle || '직무 미지정')}</div>
+                    </div>
+                    <span class="feedback-badge ${hasFb ? 'done' : 'none'}">${hasFb ? '✅ 피드백 완료' : '⏳ 미완료'}</span>
+                </div>
+                <div class="cl-body">${esc(cl.content || '')}</div>
+                <div class="cl-card-bottom">
+                    <span class="cl-date">🗓 ${dateStr}</span>
+                    <div class="cl-actions" onclick="event.stopPropagation()">
+                        <button class="btn-sm ai" onclick="openFeedbackModal(${cl.id})">🤖 AI 피드백</button>
+                        <button class="btn-sm edit" onclick="openEditModal(${cl.id})">수정</button>
+                        <button class="btn-sm del" onclick="deleteCl(${cl.id})">삭제</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+        container.innerHTML = `<div class="cl-grid">${cards}</div>`;
+    }
+
+    // ── 이력서 관리 ──
+    function loadResumes() {
+        const saved = localStorage.getItem(`resumes_${currentMemberId}`);
+        resumeFiles = saved ? JSON.parse(saved) : [];
+        renderResumes();
+    }
+
+    function saveResumes() {
+        localStorage.setItem(`resumes_${currentMemberId}`, JSON.stringify(resumeFiles));
+    }
+
+    function renderResumes() {
+        document.getElementById('resumeCount').textContent = resumeFiles.length;
+        const el = document.getElementById('resumeList');
+        if (resumeFiles.length === 0) {
+            el.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <h3>등록된 이력서가 없어요</h3>
+                    <p>위 영역에 파일을 드래그하거나 클릭해서 업로드하세요</p>
+                </div>`;
+            return;
+        }
+        el.innerHTML = `<div class="resume-list">${resumeFiles.map((r, i) => {
+            const ext = r.name.split('.').pop().toLowerCase();
+            const iconMap = { pdf: '📕', doc: '📘', docx: '📘', hwp: '📗' };
+            const iconClass = { pdf: 'pdf', doc: 'doc', docx: 'doc', hwp: 'hwp' };
+            return `
+            <div class="resume-card">
+                <div class="resume-file-icon ${iconClass[ext] || 'doc'}">${iconMap[ext] || '📄'}</div>
+                <div class="resume-info">
+                    <div class="resume-name">${esc(r.name)}</div>
+                    <div class="resume-meta">
+                        <span>📅 ${r.uploadDate}</span>
+                        <span>💾 ${r.size}</span>
+                        <span class="resume-badge ${r.isMain ? 'main' : 'sub'}">${r.isMain ? '✅ 대표 이력서' : '보조 이력서'}</span>
+                    </div>
+                </div>
+                <div class="resume-actions">
+                    ${!r.isMain ? `<button class="btn-sm main-set" onclick="setMainResume(${i})">대표 설정</button>` : ''}
+                    <button class="btn-sm del" onclick="deleteResume(${i})">삭제</button>
+                </div>
+            </div>`;
+        }).join('')}</div>`;
+    }
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) addResumeFile(file);
+        event.target.value = '';
+    }
+
+    function handleDragOver(event) {
+        event.preventDefault();
+        document.getElementById('uploadArea').classList.add('dragover');
+    }
+
+    function handleDragLeave(event) {
+        document.getElementById('uploadArea').classList.remove('dragover');
+    }
+
+    function handleDrop(event) {
+        event.preventDefault();
+        document.getElementById('uploadArea').classList.remove('dragover');
+        const file = event.dataTransfer.files[0];
+        if (file) addResumeFile(file);
+    }
+
+    function addResumeFile(file) {
+        const allowedTypes = ['.pdf', '.doc', '.docx', '.hwp'];
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (!allowedTypes.includes(ext)) {
+            showToast('PDF, DOC, DOCX, HWP 파일만 업로드 가능합니다', 'error');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            showToast('파일 크기는 10MB 이하여야 합니다', 'error');
+            return;
+        }
+
+        const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+        const sizeStr = sizeMB < 0.1
+            ? Math.round(file.size / 1024) + ' KB'
+            : sizeMB + ' MB';
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+
+        const newResume = {
+            name: file.name,
+            size: sizeStr,
+            uploadDate: dateStr,
+            isMain: resumeFiles.length === 0
+        };
+
+        resumeFiles.unshift(newResume);
+        saveResumes();
+        renderResumes();
+        showToast(`"${file.name}" 업로드 완료 ✅`, 'success');
+    }
+
+    function setMainResume(index) {
+        resumeFiles.forEach((r, i) => r.isMain = i === index);
+        saveResumes();
+        renderResumes();
+        showToast('대표 이력서로 설정되었습니다 ✅', 'success');
+    }
+
+    function deleteResume(index) {
+        if (!confirm('이 이력서를 삭제하시겠습니까?')) return;
+        const wasMain = resumeFiles[index].isMain;
+        resumeFiles.splice(index, 1);
+        if (wasMain && resumeFiles.length > 0) resumeFiles[0].isMain = true;
+        saveResumes();
+        renderResumes();
+        showToast('삭제되었습니다', 'success');
+    }
+
+    // ── 자소서 모달 ──
+    function openWriteModal() {
+        document.getElementById('editId').value = '';
+        document.getElementById('writeModalTitle').textContent = '✍️ 새 자소서 작성';
+        document.getElementById('fTitle').value = '';
+        document.getElementById('fCompanyName').value = '';
+        document.getElementById('fJobTitle').value = '';
+        document.getElementById('fContent').value = '';
+        document.getElementById('charCount').textContent = '0';
+        openModal('writeModal');
+    }
+
+    function openEditModal(id) {
+        const cl = coverLetters.find(c => c.id === id);
+        if (!cl) return;
+        document.getElementById('editId').value = id;
+        document.getElementById('writeModalTitle').textContent = '✏️ 자소서 수정';
+        document.getElementById('fTitle').value = cl.title || '';
+        document.getElementById('fCompanyName').value = cl.companyName || '';
+        document.getElementById('fJobTitle').value = cl.jobTitle || '';
+        document.getElementById('fContent').value = cl.content || '';
+        document.getElementById('charCount').textContent = (cl.content || '').length;
+        openModal('writeModal');
+    }
+
+    function closeWriteModal() { closeModal('writeModal'); }
+    function updateCharCount() { document.getElementById('charCount').textContent = document.getElementById('fContent').value.length; }
+
+    async function saveCoverLetter() {
+        const title    = document.getElementById('fTitle').value.trim();
+        const company  = document.getElementById('fCompanyName').value.trim();
+        const position = document.getElementById('fJobTitle').value.trim();
+        const content  = document.getElementById('fContent').value.trim();
+        const editId   = document.getElementById('editId').value;
+        if (!title || !content) { showToast('제목과 본문을 입력해주세요', 'error'); return; }
+        const btn = document.getElementById('btnSave');
+        btn.disabled = true; btn.textContent = '저장 중...';
+        try {
+            const url    = editId ? `/api/cover-letters/${editId}` : '/api/cover-letters';
+            const method = editId ? 'PUT' : 'POST';
+            const res    = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify({ title, companyName: company, jobTitle: position, content }) });
+            if (!res.ok) throw new Error();
+            closeWriteModal();
+            showToast(editId ? '수정되었습니다' : '저장되었습니다 ✅', 'success');
+            await loadCoverLetters();
+        } catch(e) { showToast('저장 중 오류가 발생했습니다', 'error'); }
+        finally { btn.disabled = false; btn.textContent = '저장하기'; }
+    }
+
+    // ── AI 피드백 모달 ──
+    function openFeedbackModal(id) {
+        currentCl = coverLetters.find(c => c.id === id);
+        if (!currentCl) return;
+        document.getElementById('fbInfoBar').innerHTML = `
+            <div class="cl-info-item"><strong>회사</strong> ${esc(currentCl.companyName || '-')}</div>
+            <div class="cl-info-item"><strong>직무</strong> ${esc(currentCl.jobTitle || '-')}</div>
+            <div class="cl-info-item"><strong>제목</strong> ${esc(currentCl.title)}</div>`;
+        document.getElementById('fbOriginal').textContent = currentCl.content || '';
+        switchTab('feedback');
+        if (currentCl.aiFeedback) {
+            showFeedbackResult(currentCl.aiFeedback);
+            document.getElementById('btnGetFeedback').textContent = '🔄 다시 받기';
+        } else {
+            document.getElementById('fbLoading').classList.remove('show');
+            document.getElementById('fbContent').classList.remove('show');
+            document.getElementById('fbMarkdown').innerHTML = '';
+            document.getElementById('fbScoreBox').style.display = 'none';
+            document.getElementById('btnGetFeedback').textContent = '🤖 AI 피드백 받기';
+        }
+        openModal('feedbackModal');
+    }
+
+    function closeFeedbackModal() { closeModal('feedbackModal'); }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.ftab').forEach((t,i) => t.classList.toggle('active', i === (tab==='feedback'?0:1)));
+        const fbLoading = document.getElementById('fbLoading');
+        const fbContent = document.getElementById('fbContent');
+        const fbOriginal = document.getElementById('fbOriginal');
+        if (tab === 'original') {
+            fbLoading.classList.remove('show'); fbContent.classList.remove('show'); fbOriginal.classList.add('show');
+        } else {
+            fbOriginal.classList.remove('show');
+            if (currentCl && currentCl.aiFeedback) fbContent.classList.add('show');
+        }
+    }
+
+    async function requestFeedback() {
+        if (!currentCl) return;
+        const btn = document.getElementById('btnGetFeedback');
+        btn.disabled = true;
+        document.getElementById('fbLoading').classList.add('show');
+        document.getElementById('fbContent').classList.remove('show');
+        document.getElementById('fbOriginal').classList.remove('show');
+        switchTab('feedback');
+        try {
+            const res = await fetch(`/api/cover-letters/${currentCl.id}/feedback`, { method: 'POST' });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            currentCl.aiFeedback = data.feedback;
+            const idx = coverLetters.findIndex(c => c.id === currentCl.id);
+            if (idx !== -1) coverLetters[idx].aiFeedback = data.feedback;
+            renderList(); renderStats();
+            showFeedbackResult(data.feedback);
+            btn.textContent = '🔄 다시 받기';
+        } catch(e) {
+            document.getElementById('fbLoading').classList.remove('show');
+            showToast('AI 피드백 요청 중 오류가 발생했습니다', 'error');
+        } finally { btn.disabled = false; }
+    }
+
+    function showFeedbackResult(feedback) {
+        document.getElementById('fbLoading').classList.remove('show');
+        document.getElementById('fbMarkdown').innerHTML = typeof marked !== 'undefined'
+            ? marked.parse(feedback)
+            : feedback.replace(/\n/g,'<br>');
+        const scoreMatch = feedback.match(/(\d{1,3})\s*[\/점]/);
+        if (scoreMatch) {
+            const score = parseInt(scoreMatch[1]);
+            if (score <= 100) {
+                document.getElementById('fbScore').textContent = score;
+                document.getElementById('fbScoreBox').style.display = 'flex';
+            }
+        }
+        document.getElementById('fbContent').classList.add('show');
+    }
+
+    async function deleteCl(id) {
+        if (!confirm('자소서를 삭제하시겠습니까?')) return;
+        try {
+            const res = await fetch(`/api/cover-letters/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+            showToast('삭제되었습니다', 'success');
+            await loadCoverLetters();
+        } catch(e) { showToast('삭제 중 오류가 발생했습니다', 'error'); }
+    }
+
+    // ── 드로어 / 모달 공통 ──
+    function toggleDrawer() { document.getElementById('drawer').classList.contains('open') ? closeDrawer() : openDrawer(); }
+    function openDrawer() { document.getElementById('drawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); document.getElementById('hamburger').classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeDrawer() { document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); document.getElementById('hamburger').classList.remove('open'); document.body.style.overflow = ''; }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); closeModal('writeModal'); closeModal('feedbackModal'); } });
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+
+    function showToast(msg, type = '') {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.className = 'toast' + (type ? ' ' + type : '');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    async function logout() { await fetch('/api/members/logout', { method: 'POST' }); location.href = '/'; }
+</script>
+</body>
+</html>

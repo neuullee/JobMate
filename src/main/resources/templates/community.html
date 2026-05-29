@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 커뮤니티</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0f2340; --blue: #2563eb; --teal: #0891b2;
+            --green: #059669; --amber: #d97706; --red: #dc2626;
+            --bg: #f0f4f8; --card: #ffffff; --text: #1e293b;
+            --muted: #64748b; --border: #e2e8f0;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Pretendard',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+        /* 네비바 */
+        .navbar { background:var(--navy); height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; position:sticky; top:0; z-index:100; }
+        .nav-logo { color:#fff; font-size:18px; font-weight:800; letter-spacing:2px; text-decoration:none; }
+        .nav-right { display:flex; align-items:center; gap:12px; }
+        .btn-user { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 14px; border-radius:20px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .btn-hamburger { background:none; border:none; cursor:pointer; padding:4px; display:flex; flex-direction:column; gap:5px; }
+        .btn-hamburger span { display:block; width:22px; height:2px; background:#fff; border-radius:2px; }
+
+        /* 드로어 */
+        .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; opacity:0; pointer-events:none; transition:.3s; }
+        .drawer-overlay.open { opacity:1; pointer-events:all; }
+        .drawer { position:fixed; top:0; right:0; width:280px; height:100vh; background:#fff; z-index:201; transform:translateX(100%); transition:.3s; display:flex; flex-direction:column; }
+        .drawer.open { transform:translateX(0); }
+        .drawer-header { background:var(--navy); padding:20px; display:flex; align-items:center; justify-content:space-between; }
+        .drawer-header span { color:#fff; font-weight:700; font-size:16px; }
+        .drawer-close { background:none; border:none; color:#fff; font-size:22px; cursor:pointer; }
+        .drawer-nav { flex:1; overflow-y:auto; padding:16px 0; }
+        .drawer-section-title { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1px; padding:8px 20px 4px; }
+        .drawer-item { display:flex; align-items:center; gap:12px; padding:12px 20px; text-decoration:none; color:var(--text); transition:.2s; }
+        .drawer-item:hover { background:var(--bg); }
+        .drawer-item.active { background:#eff6ff; color:var(--blue); }
+        .d-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .drawer-divider { height:1px; background:var(--border); margin:8px 20px; }
+        .drawer-footer { padding:16px 20px; border-top:1px solid var(--border); }
+        .btn-logout { width:calc(100% - 24px); margin:12px; padding:12px; border-radius:12px; background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .btn-logout:hover { background:#fecaca; }
+
+        /* 메인 */
+        .main { max-width:760px; margin:0 auto; padding:24px 16px; }
+        .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+        .page-title { display:flex; align-items:center; gap:10px; font-size:20px; font-weight:800; }
+        .btn-write { background:var(--navy); color:#fff; border:none; padding:10px 20px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .btn-write:hover { background:#1a3355; }
+
+        /* 탭 */
+        .tab-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+        .tab { padding:7px 16px; border-radius:20px; font-size:13px; font-weight:500; border:1px solid var(--border); background:var(--card); color:var(--muted); cursor:pointer; transition:.2s; }
+        .tab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+        .tab-my { background:#eff6ff; color:var(--blue); border-color:#bfdbfe; }
+        .tab-my.active { background:var(--blue); color:#fff; }
+
+        /* 검색 */
+        .search-bar { display:flex; gap:8px; margin-bottom:16px; }
+        .search-input { flex:1; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; background:var(--card); }
+        .search-input:focus { outline:none; border-color:var(--blue); }
+        .search-type { display:flex; gap:4px; }
+        .stype-btn { padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:var(--card); cursor:pointer; }
+        .stype-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+        .btn-search { padding:10px 16px; background:var(--navy); color:#fff; border:none; border-radius:10px; font-size:14px; cursor:pointer; font-weight:600; }
+
+        /* 게시글 카드 */
+        .post-card { background:var(--card); border-radius:14px; padding:18px 20px; margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,.06); cursor:pointer; transition:.2s; }
+        .post-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.1); transform:translateY(-1px); }
+        .post-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+        .post-category { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; }
+        .cat-free { background:#eff6ff; color:var(--blue); }
+        .cat-job { background:#f0fdf4; color:var(--green); }
+        .cat-interview { background:#fdf4ff; color:#9333ea; }
+        .cat-study { background:#fff7ed; color:var(--amber); }
+        .post-my { font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px; background:#f0fdf4; color:var(--green); }
+        .post-title { font-size:15px; font-weight:700; margin-bottom:6px; }
+        .post-meta { display:flex; align-items:center; gap:12px; font-size:12px; color:var(--muted); }
+        .post-tag { background:#f1f5f9; padding:2px 8px; border-radius:12px; font-size:11px; color:var(--muted); }
+        .empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
+
+        /* 글쓰기 모달 */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:none; align-items:center; justify-content:center; padding:20px; }
+        .modal-overlay.open { display:flex; }
+        .modal { background:#fff; border-radius:16px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; }
+        .modal-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+        .modal-title { font-size:18px; font-weight:700; }
+        .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); }
+        .modal-body { padding:24px; display:flex; flex-direction:column; gap:16px; }
+        .form-group { display:flex; flex-direction:column; gap:6px; }
+        .form-label { font-size:13px; font-weight:600; color:var(--text); }
+        .form-input { padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; }
+        .form-input:focus { outline:none; border-color:var(--blue); }
+        .form-select { padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; background:var(--card); }
+        .form-textarea { padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; resize:vertical; min-height:140px; }
+        .form-textarea:focus { outline:none; border-color:var(--blue); }
+        .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+        .btn-cancel { padding:10px 20px; border:1px solid var(--border); border-radius:10px; background:var(--bg); font-size:14px; cursor:pointer; }
+        .btn-submit { padding:10px 24px; background:var(--navy); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; }
+        .btn-submit:hover { background:#1a3355; }
+    </style>
+</head>
+<body>
+
+<!-- 네비바 -->
+<nav class="navbar">
+    <a class="nav-logo" href="/dashboard">JOBMATE</a>
+    <div class="nav-right">
+        <button class="btn-user" onclick="location.href='/profile-setup'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <span id="nav-username">최하늘님</span>
+        </button>
+        <button class="btn-hamburger" onclick="openDrawer()">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</nav>
+
+<!-- 드로어 -->
+<div class="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer">
+    <div class="drawer-header"><span>JOBMATE 메뉴</span><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
+    <nav class="drawer-nav">
+        <div class="drawer-section-title">메인 메뉴</div>
+        <a class="drawer-item" href="/dashboard"><div class="d-icon" style="background:#eff6ff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div><div style="font-size:14px;font-weight:600">대시보드</div><div style="font-size:12px;color:var(--muted)">홈 화면</div></div></a>
+        <a class="drawer-item" href="/jobs"><div class="d-icon" style="background:#f0fdf4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div><div><div style="font-size:14px;font-weight:600">공고 매칭</div><div style="font-size:12px;color:var(--muted)">맞춤 채용공고 확인</div></div></a>
+        <a class="drawer-item active" href="/community"><div class="d-icon" style="background:#fff7ed"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div style="font-size:14px;font-weight:600">커뮤니티</div><div style="font-size:12px;color:var(--muted)">개발자 커뮤니티</div></div></a>
+        <a class="drawer-item" href="/interview"><div class="d-icon" style="background:#fdf4ff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><div style="font-size:14px;font-weight:600">AI 면접 코칭</div><div style="font-size:12px;color:var(--muted)">면접 준비</div></div></a>
+        <a class="drawer-item" href="/interview-notes"><div class="d-icon" style="background:#fff1f2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div><div style="font-size:14px;font-weight:600">면접 오답노트</div><div style="font-size:12px;color:var(--muted)">오답 정리</div></div></a>
+        <a class="drawer-item" href="/cover-letter"><div class="d-icon" style="background:#f0fdfa"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div><div style="font-size:14px;font-weight:600">이력서·자소서 관리</div><div style="font-size:12px;color:var(--muted)">AI 피드백</div></div></a>
+        <a class="drawer-item" href="/profile-setup"><div class="d-icon" style="background:#fefce8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div><div style="font-size:14px;font-weight:600">맞춤 정보 설정</div><div style="font-size:12px;color:var(--muted)">직무·기술스택·지역·연봉 설정</div></div></a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-title">설정</div>
+        <a class="drawer-item" href="/account"><div class="d-icon" style="background:#fefce8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div><div style="font-size:14px;font-weight:600">계정 관리</div><div style="font-size:12px;color:var(--muted)">비밀번호·개인정보 변경</div></div></a>
+    </nav>
+    <div class="drawer-footer"><button class="btn-logout" onclick="doLogout()">로그아웃</button></div>
+</div>
+<div class="modal-overlay" id="write-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">✏️ 글쓰기</div>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">카테고리</label>
+                <select class="form-select" id="post-category">
+                    <option value="자유게시판">자유게시판</option>
+                    <option value="취업후기">취업후기</option>
+                    <option value="면접질문">면접질문</option>
+                    <option value="스터디모집">스터디모집</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">제목</label>
+                <input class="form-input" type="text" id="post-title" placeholder="제목을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label class="form-label">내용</label>
+                <textarea class="form-textarea" id="post-content" placeholder="내용을 입력하세요..."></textarea>
+            </div>
+            <!-- 교체 -->
+            <div class="form-group">
+                <label class="form-label">태그 (선택, 쉼표로 구분)</label>
+                <input class="form-input" type="text" id="post-tags" placeholder="예: 백엔드, 취업, Java">
+            </div>
+            <div class="form-group">
+                <label class="form-label">작성자</label>
+                <div style="display:flex;gap:8px;">
+                    <button type="button" id="author-nickname-btn"
+                            onclick="setAuthorMode('nickname')"
+                            style="flex:1;padding:10px;border:1px solid var(--blue);border-radius:10px;background:#eff6ff;color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;">
+                        👤 <span id="author-nickname-label">닉네임</span>
+                    </button>
+                    <button type="button" id="author-anon-btn"
+                            onclick="setAuthorMode('anon')"
+                            style="flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;">
+                        🕶️ 익명
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal()">취소</button>
+            <button class="btn-submit" onclick="submitPost()">게시하기</button>
+        </div>
+    </div>
+</div>
+
+<main class="main">
+    <div class="page-header">
+        <div class="page-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            커뮤니티
+        </div>
+        <button class="btn-write" onclick="openModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            글쓰기
+        </button>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tab-bar">
+        <div class="tab active" onclick="filterTab('전체', this)">전체</div>
+        <div class="tab" onclick="filterTab('자유게시판', this)">자유게시판</div>
+        <div class="tab" onclick="filterTab('취업후기', this)">취업후기</div>
+        <div class="tab" onclick="filterTab('면접질문', this)">면접질문</div>
+        <div class="tab" onclick="filterTab('스터디모집', this)">스터디모집</div>
+        <div class="tab tab-my" onclick="filterTab('내 글', this)">✏️ 내가 쓴 글</div>
+    </div>
+
+    <!-- 검색 -->
+    <div class="search-bar">
+        <input class="search-input" type="text" id="search-input" placeholder="검색어를 입력하세요" onkeydown="if(event.key==='Enter')doSearch()">
+        <div class="search-type">
+            <button class="stype-btn active" id="stype-both" onclick="setSearchType('both')">제목+내용</button>
+            <button class="stype-btn" id="stype-author" onclick="setSearchType('author')">작성자</button>
+        </div>
+        <button class="btn-search" onclick="doSearch()">검색</button>
+    </div>
+
+    <!-- 게시글 목록 -->
+    <div id="post-list">
+        <div style="text-align:center;padding:40px;color:var(--muted)">불러오는 중...</div>
+    </div>
+</main>
+
+<script>
+    // 교체
+    let allPosts = [];
+    let currentTab = '전체';
+    let currentSearchType = 'both';
+    let memberId = null;
+    let myPosts = new Set();
+    let authorMode = 'nickname';  // 'nickname' | 'anon'
+    let myName = '';
+
+    function setAuthorMode(mode) {
+        authorMode = mode;
+        const nickBtn = document.getElementById('author-nickname-btn');
+        const anonBtn = document.getElementById('author-anon-btn');
+        if (mode === 'nickname') {
+            nickBtn.style.border = '1px solid var(--blue)';
+            nickBtn.style.background = '#eff6ff';
+            nickBtn.style.color = 'var(--blue)';
+            anonBtn.style.border = '1px solid var(--border)';
+            anonBtn.style.background = 'var(--bg)';
+            anonBtn.style.color = 'var(--muted)';
+        } else {
+            anonBtn.style.border = '1px solid var(--blue)';
+            anonBtn.style.background = '#eff6ff';
+            anonBtn.style.color = 'var(--blue)';
+            nickBtn.style.border = '1px solid var(--border)';
+            nickBtn.style.background = 'var(--bg)';
+            nickBtn.style.color = 'var(--muted)';
+        }
+    }
+
+    function openDrawer() {
+        document.querySelector('.drawer').classList.add('open');
+        document.querySelector('.drawer-overlay').classList.add('open');
+    }
+    function closeDrawer() {
+        document.querySelector('.drawer').classList.remove('open');
+        document.querySelector('.drawer-overlay').classList.remove('open');
+    }
+    function openModal() {
+        document.getElementById('write-modal').classList.add('open');
+        setAuthorMode('nickname');
+    }
+    function closeModal() {
+        document.getElementById('write-modal').classList.remove('open');
+        document.getElementById('post-title').value = '';
+        document.getElementById('post-content').value = '';
+        document.getElementById('post-tags').value = '';
+    }
+
+    function setSearchType(type) {
+        currentSearchType = type;
+        document.getElementById('stype-both').classList.toggle('active', type === 'both');
+        document.getElementById('stype-author').classList.toggle('active', type === 'author');
+    }
+
+    function filterTab(tab, el) {
+        currentTab = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        renderPosts();
+    }
+
+    function doSearch() {
+        renderPosts();
+    }
+
+    function getCategoryClass(cat) {
+        const map = { '자유게시판':'cat-free', '취업후기':'cat-job', '면접질문':'cat-interview', '스터디모집':'cat-study' };
+        return map[cat] || 'cat-free';
+    }
+
+    function timeAgo(dateStr) {
+        if (!dateStr) return '';
+        // UTC로 명시적 파싱
+        const date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+        const diff = (Date.now() - date) / 1000;
+        if (diff < 60) return '방금 전';
+        if (diff < 3600) return Math.floor(diff/60) + '분 전';
+        if (diff < 86400) return Math.floor(diff/3600) + '시간 전';
+        if (diff < 2592000) return Math.floor(diff/86400) + '일 전';
+        return date.toLocaleDateString('ko-KR');
+    }
+
+    function renderPosts() {
+        const query = document.getElementById('search-input').value.toLowerCase().trim();
+        let filtered = allPosts;
+
+        if (currentTab === '내 글') {
+            filtered = filtered.filter(p => myPosts.has(p.id) || p.memberId === memberId);
+        } else if (currentTab !== '전체') {
+            filtered = filtered.filter(p => p.category === currentTab);
+        }
+
+        if (query) {
+            if (currentSearchType === 'author') {
+                filtered = filtered.filter(p => (p.author||p.authorName||'').toLowerCase().includes(query));
+            } else {
+                filtered = filtered.filter(p =>
+                    (p.title||'').toLowerCase().includes(query) ||
+                    (p.content||'').toLowerCase().includes(query)
+                );
+            }
+        }
+
+        const el = document.getElementById('post-list');
+        if (!filtered.length) {
+            el.innerHTML = '<div class="empty-state"><div style="font-size:40px;margin-bottom:12px">📭</div><div>게시글이 없습니다.</div></div>';
+            return;
+        }
+
+        el.innerHTML = filtered.map(p => {
+            const isMyPost = myPosts.has(p.id) || p.memberId === memberId;
+            const tags = (p.tags || '').split(',').filter(t => t.trim()).slice(0, 3);
+            return `
+            <div class="post-card" onclick="location.href='/community/${p.id}'">
+                <div class="post-header">
+                    <span class="post-category ${getCategoryClass(p.category)}">${p.category || '자유게시판'}</span>
+                    ${isMyPost ? '<span class="post-my">내 글</span>' : ''}
+                </div>
+                <div class="post-title">${p.title || ''}</div>
+                <div class="post-meta">
+                    <span>👤 ${p.author || p.authorName || p.memberName || '익명'}</span>
+                    <span>👁 ${p.viewCount||0}</span>
+                    <span>❤️ ${p.likeCount||0}</span>
+                    <span>💬 ${p.commentCount||0}</span>
+                    <span>🕐 ${timeAgo(p.createdAt)}</span>
+                    ${tags.map(t => `<span class="post-tag">#${t.trim()}</span>`).join('')}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // 교체
+    async function submitPost() {
+        const title = document.getElementById('post-title').value.trim();
+        const content = document.getElementById('post-content').value.trim();
+        const category = document.getElementById('post-category').value;
+        const tags = document.getElementById('post-tags').value.trim();
+        const authorName = authorMode === 'anon' ? '익명' : myName;
+
+        if (!title) { alert('제목을 입력해주세요.'); return; }
+        if (!content) { alert('내용을 입력해주세요.'); return; }
+
+        try {
+            const r = await fetch('/api/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title, content, category, tags, memberId, authorName,
+                    anonymous: authorMode === 'anon'
+                })
+            });
+            if (r.ok) {
+                closeModal();
+                await loadPosts();
+            } else {
+                alert('게시글 작성에 실패했습니다.');
+            }
+        } catch(e) {
+            alert('네트워크 오류가 발생했습니다.');
+        }
+    }
+
+    async function loadPosts() {
+        try {
+            const r2 = await fetch('/api/posts');  // ← 전체 글 목록
+            if (r2.ok) {
+                const data = await r2.json();
+                allPosts = Array.isArray(data) ? data : (data.content || data.posts || []);
+            }
+        } catch(e) {
+            allPosts = [];
+        }
+        renderPosts();
+    }
+
+    async function init() {
+        try {
+            const r = await fetch('/api/members/me');
+            if (r.ok) {
+                const d = await r.json();
+                // 교체
+                memberId = d.id;
+                myName = d.name || '사용자';
+                document.getElementById('nav-username').textContent = myName + '님';
+                document.getElementById('author-nickname-label').textContent = myName;
+
+                // 내 글 ID 목록 (세션 기반으로 가져오기)
+                try {
+                    const r2 = await fetch('/api/posts?myPosts=true');
+                    if (r2.ok) {
+                        const mine = await r2.json();
+                        const list = Array.isArray(mine) ? mine : (mine.posts || []);
+                        list.forEach(p => myPosts.add(p.id));
+                    }
+                } catch(e) {}
+            }
+        } catch(e) {}
+        await loadPosts();
+    }
+
+    init();
+
+    function doLogout() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/logout';
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+</body>
+</html>

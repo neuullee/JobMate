@@ -1,0 +1,17 @@
+/gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+
+# env
+.env
+.env.*
+!.env.example
+
+# spring profile files
+src/main/resources/application-dev.yml
+src/main/resources/application-prod.yml
+
+# allow example files
+!src/main/resources/application-dev.yml.example
+!src/main/resources/application-prod.yml.example
+

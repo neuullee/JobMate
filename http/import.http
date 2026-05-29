@@ -1,0 +1,9 @@
+POST http://localhost:8080/api/admin/import-csv
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="AMA_결과.csv"
+Content-Type: text/csv
+
+< C:/UiPath_Projects/AMA_AutoMatchAI/Output/AMA_결과.csv
+--WebAppBoundary--

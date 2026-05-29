@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 맞춤 정보 설정하기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:#1e3a5f; --navy2:#162d4a; --navy-light:#2a5298; --accent:#3b82f6;
+            --bg:#f0f4f8; --border:#d6e0ec; --text:#1a2a3a; --text-sub:#6b7f96;
+            --green:#10b981; --red:#ef4444; --panel:#ffffff; --panel-soft:#f8fbff;
+            --panel-soft-2:#eef4ff; --line:#e5edf7; --tag:#eaf2ff;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); min-height:100vh; overflow-x:hidden; color:var(--text); }
+        header { background:linear-gradient(135deg,var(--navy2),var(--navy)); padding:0 48px; height:68px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 20px rgba(30,58,95,0.3); position:sticky; top:0; z-index:200; }
+        header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+        .logo { color:white; font-size:1.4rem; font-weight:900; letter-spacing:6px; text-decoration:none; }
+        .header-right { display:flex; align-items:center; gap:12px; }
+        .user-chip { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:100px; padding:6px 14px; }
+        .user-avatar { width:26px; height:26px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; }
+        .user-name { color:#e2eaf4; font-size:13px; }
+        .hamburger { width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; }
+        .hamburger span { display:block; width:18px; height:2px; background:white; border-radius:2px; transition:all .3s; }
+        .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+        .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+        .hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+        .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:300; opacity:0; visibility:hidden; transition:all .3s; }
+        .drawer-overlay.open { opacity:1; visibility:visible; }
+        .drawer { position:fixed; top:0; right:-320px; width:300px; height:100vh; background:white; z-index:400; display:flex; flex-direction:column; transition:right .35s cubic-bezier(0.34,1.56,0.64,1); box-shadow:-8px 0 40px rgba(0,0,0,0.15); }
+        .drawer.open { right:0; }
+        .drawer-header { background:linear-gradient(135deg,var(--navy2),var(--navy)); padding:24px 24px 20px; position:relative; flex-shrink:0; }
+        .drawer-header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+        .drawer-logo { color:white; font-size:1.1rem; font-weight:900; letter-spacing:4px; margin-bottom:16px; }
+        .drawer-user { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.1); border-radius:10px; padding:10px 14px; }
+        .drawer-avatar { width:38px; height:38px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:white; flex-shrink:0; }
+        .drawer-user-name { color:white; font-size:14px; font-weight:700; }
+        .drawer-user-sub { color:rgba(255,255,255,0.6); font-size:11px; margin-top:2px; }
+        .drawer-close { position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,0.15); border:none; color:white; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .drawer-nav { flex:1; padding:12px; overflow-y:auto; }
+        .drawer-section-label { font-size:10px; font-weight:700; color:var(--text-sub); letter-spacing:2px; text-transform:uppercase; padding:10px 12px 6px; }
+        .drawer-item { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; font-size:14px; font-weight:600; color:var(--text); cursor:pointer; text-decoration:none; transition:all .2s; margin-bottom:2px; }
+        .drawer-item:hover { background:#f0f4f8; color:var(--navy); }
+        .drawer-item.active { background:#eef4ff; color:var(--navy); }
+        .item-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+        .item-text{flex:1} .item-desc{font-size:11px;color:var(--text-sub);font-weight:400;margin-top:1px;}
+        .drawer-divider { height:1px; background:var(--border); margin:8px 12px; }
+        .drawer-footer { padding:16px 12px; border-top:1px solid var(--border); flex-shrink:0; }
+        .btn-logout-drawer { width:100%; padding:12px; border-radius:12px; background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .pb-section { margin:32px auto 0; max-width:1180px; padding:0 24px; }
+        .pb-card { padding:20px 24px; background:linear-gradient(135deg,#eef4ff,#f8faff); border:1.5px solid #c7d9f8; border-radius:16px; }
+        .pb-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+        .pb-title { font-size:14px; font-weight:700; color:var(--navy); }
+        .pb-pct { font-size:24px; font-weight:900; color:var(--navy); }
+        .pb-bar { height:10px; background:#d6e0ec; border-radius:100px; overflow:hidden; margin-bottom:12px; }
+        .pb-fill { height:100%; border-radius:100px; background:linear-gradient(90deg,#3b82f6,#06b6d4); transition:width .8s ease; }
+        .pb-list { display:flex; flex-wrap:wrap; gap:6px; }
+        .pb-item { font-size:11px; padding:3px 10px; border-radius:100px; font-weight:600; transition:all .3s; }
+        .pb-item.done { background:#dcfce7; color:#16a34a; }
+        .pb-item.todo { background:#f1f5f9; color:var(--text-sub); }
+        .container { max-width:1180px; margin:32px auto 80px; background:white; border-radius:24px; padding:40px; box-shadow:0 8px 40px rgba(30,58,95,0.1); }
+        .page-title { margin-bottom:30px; }
+        .page-title h2 { font-size:28px; font-weight:900; color:var(--navy); margin-bottom:8px; }
+        .page-title p { font-size:14px; color:var(--text-sub); line-height:1.6; }
+        .section { margin-bottom:30px; }
+        .section-label { font-size:14px; font-weight:700; color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+        .section-label .req { color:var(--red); }
+        .section-label .hint { font-size:12px; color:var(--text-sub); font-weight:400; }
+        /* 선택사항 배지 */
+        .optional-badge { font-size:11px; color:#6b7f96; background:#f1f5f9; border:1px solid #d6e0ec; border-radius:100px; padding:2px 8px; font-weight:600; }
+        .category-search-row { display:flex; gap:10px; align-items:center; margin-bottom:12px; }
+        .category-search-row input { flex:1; padding:12px 14px; border:1.5px solid var(--border); border-radius:12px; font-size:14px; font-family:inherit; outline:none; background:white; }
+        .category-search-row input:focus { border-color:var(--navy); }
+        .selector-panel { border:1.5px solid var(--border); border-radius:18px; overflow:hidden; background:white; }
+        .selector-head { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:linear-gradient(180deg,#fbfdff,#f4f8fc); border-bottom:1px solid var(--line); }
+        .selector-head-title { font-size:18px; font-weight:800; color:var(--navy); }
+        .selector-head-sub { font-size:12px; color:var(--text-sub); }
+        .selector-body { display:grid; grid-template-columns:250px 1fr; min-height:430px; }
+        .left-panel { border-right:1px solid var(--line); background:#fbfdff; padding:14px; }
+        .left-list { display:flex; flex-direction:column; gap:8px; }
+        .left-item { width:100%; border:1.5px solid var(--border); background:white; border-radius:12px; padding:12px 14px; text-align:left; font-size:14px; font-weight:700; color:var(--text); cursor:pointer; font-family:inherit; transition:all .2s; }
+        .left-item:hover { background:#f5f9ff; border-color:#b6ccec; }
+        .left-item.active { background:#eaf2ff; border-color:#7aa8e8; color:var(--navy); }
+        .right-panel { padding:16px 18px 18px; display:flex; flex-direction:column; gap:18px; }
+        .field-box { border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--panel); }
+        .field-row { display:grid; grid-template-columns:170px 1fr; min-height:72px; border-bottom:1px solid var(--line); }
+        .field-row:last-child { border-bottom:none; }
+        .field-title { background:var(--panel-soft); padding:18px 16px; font-size:14px; font-weight:800; color:var(--navy); display:flex; align-items:flex-start; justify-content:flex-start; }
+        .field-content { padding:14px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; align-content:flex-start; }
+        .opt { border:none; background:transparent; color:#46607b; font-size:14px; cursor:pointer; font-family:inherit; padding:4px 2px; line-height:1.4; border-radius:8px; transition:all .18s; text-align:left; }
+        .opt:hover { color:#1f5cbf; background:#f4f8ff; padding-left:6px; padding-right:6px; }
+        .opt.active { color:#1f5cbf; font-weight:800; background:#edf4ff; padding-left:8px; padding-right:8px; }
+        .opt.selected { color:#2563eb; font-weight:800; background:#eaf2ff; padding-left:8px; padding-right:8px; }
+        .selected-box { margin-top:12px; border:1.5px solid var(--border); border-radius:14px; padding:14px; background:#f8fbff; }
+        .selected-title { font-size:12px; font-weight:800; color:var(--navy); margin-bottom:10px; }
+        .selected-list { display:flex; flex-wrap:wrap; gap:8px; min-height:24px; }
+        .selected-empty { font-size:12px; color:var(--text-sub); }
+        .selected-tag { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; background:var(--tag); color:var(--navy); font-size:12px; font-weight:800; }
+        .selected-tag button { border:none; background:transparent; color:var(--navy); cursor:pointer; font-size:14px; line-height:1; padding:0; }
+        .chip-group { display:flex; flex-wrap:wrap; gap:8px; }
+        .chip { padding:8px 18px; border:1.5px solid var(--border); border-radius:100px; cursor:pointer; font-size:13px; color:var(--text-sub); transition:all .2s; user-select:none; font-family:inherit; background:white; font-weight:500; }
+        .chip:hover { border-color:var(--navy); color:var(--navy); background:#f0f4ff; }
+        .chip.selected { background:var(--navy); border-color:var(--navy); color:white; font-weight:700; }
+        .career-chips .chip { min-width:80px; text-align:center; }
+        .location-box { background:#f8faff; border:1.5px solid var(--border); border-radius:14px; padding:20px; }
+        .location-input-row { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+        .location-input-row input { flex:1; min-width:160px; padding:10px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-family:inherit; outline:none; transition:border .2s; background:white; }
+        .location-input-row input:focus { border-color:var(--navy); }
+        .btn-search, .btn-gps { padding:10px 16px; border:none; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; }
+        .btn-search { background:var(--navy); color:white; }
+        .btn-gps { background:#e8f0fb; color:var(--navy); border:1.5px solid #b8d0f0; }
+        .location-result { font-size:12px; color:var(--text-sub); margin-bottom:16px; min-height:16px; }
+        .location-result.ok { color:var(--green); font-weight:600; }
+        .location-result.err { color:#b45309; font-weight:500; line-height:1.5; }
+        .distance-row { display:flex; flex-direction:column; gap:8px; }
+        .distance-label-row { display:flex; justify-content:space-between; font-size:13px; }
+        .distance-label-row span { color:var(--text-sub); }
+        .distance-label-row strong { color:var(--navy); font-weight:700; font-size:14px; }
+        .distance-marks { display:flex; justify-content:space-between; font-size:11px; color:var(--text-sub); margin-top:4px; }
+        .salary-section { display:flex; flex-direction:column; gap:16px; }
+        .salary-row { display:flex; flex-direction:column; gap:8px; }
+        .salary-row-label { display:flex; justify-content:space-between; font-size:13px; color:var(--text-sub); }
+        .salary-row-label strong { color:var(--navy); font-weight:700; font-size:14px; }
+        input[type=range] { width:100%; accent-color:var(--navy); height:6px; cursor:pointer; }
+        .weight-section { display:flex; flex-direction:column; gap:18px; }
+        .weight-row { display:flex; flex-direction:column; gap:8px; }
+        .weight-row-label { display:flex; justify-content:space-between; font-size:13px; }
+        .weight-row-label span { color:var(--text-sub); }
+        .weight-row-label strong { color:var(--navy); font-weight:700; }
+        .weight-total-box { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-radius:10px; background:#f8faff; border:1.5px solid var(--border); font-size:13px; color:var(--text-sub); margin-top:8px; }
+        .weight-total-box .total-num { font-size:16px; font-weight:900; color:var(--navy); }
+        .weight-total-box.warn { background:#fff5f5; border-color:#fca5a5; }
+        .weight-total-box.warn .total-num { color:var(--red); }
+        .weight-total-box.ok { background:#f0fdf4; border-color:#86efac; }
+        .weight-total-box.ok .total-num { color:var(--green); }
+        .divider { border:none; border-top:1px solid var(--border); margin:32px 0; }
+        .btn-submit { width:100%; padding:16px; background:linear-gradient(135deg,var(--navy),var(--navy-light)); color:white; border:none; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; transition:all .3s; margin-top:8px; letter-spacing:1px; }
+        .btn-submit:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(30,58,95,0.35); }
+        .message { margin-top:14px; padding:14px 18px; border-radius:12px; text-align:center; font-size:14px; display:none; font-weight:600; }
+        .success { background:#dcfce7; color:#16a34a; }
+        .error-msg { background:#fee2e2; color:#dc2626; }
+        .empty-block { font-size:13px; color:var(--text-sub); line-height:1.5; }
+        @media(max-width:980px){ .selector-body{grid-template-columns:1fr} .left-panel{border-right:none;border-bottom:1px solid var(--line)} .field-row{grid-template-columns:1fr} .field-title{border-bottom:1px solid var(--line)} }
+        @media(max-width:700px){ header{padding:0 16px} .pb-section{padding:0 12px} .container{margin:20px 12px 60px;padding:22px 16px;border-radius:16px} .user-chip{display:none} .selector-head{flex-direction:column;align-items:flex-start;gap:6px} }
+    </style>
+</head>
+<body>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        <div class="drawer-logo">JOBMATE</div>
+        <div class="drawer-user">
+            <div class="drawer-avatar" id="drawerAvatar">?</div>
+            <div><div class="drawer-user-name" id="drawerUserName">불러오는 중...</div><div class="drawer-user-sub">로그인됨</div></div>
+        </div>
+    </div>
+    <nav class="drawer-nav">
+        <div class="drawer-section-label">메인 메뉴</div>
+        <a class="drawer-item" href="/dashboard"><div class="item-icon blue" style="background:#dbeafe"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div class="item-text"><div>대시보드</div><div class="item-desc">홈 화면으로 이동</div></div></a>
+        <a class="drawer-item" href="/jobs"><div class="item-icon green" style="background:#dcfce7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="item-text"><div>공고 매칭</div><div class="item-desc">맞춤 채용공고 확인</div></div></a>
+        <a class="drawer-item" href="/community"><div class="item-icon indigo" style="background:#e0e7ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="item-text"><div>커뮤니티</div><div class="item-desc">개발자들과 소통하기</div></div></a>
+        <a class="drawer-item" href="/interview"><div class="item-icon yellow" style="background:#fef3c7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="item-text"><div>면접 코칭</div><div class="item-desc">AI 면접 질문 &amp; 피드백</div></div></a>
+        <a class="drawer-item" href="/interview-notes"><div class="item-icon note" style="background:#f5f3ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div><div class="item-text"><div>면접 오답노트</div><div class="item-desc">면접 질문·피드백 복습</div></div></a>
+        <a class="drawer-item" href="/cover-letter"><div class="item-icon teal" style="background:#ccfbf1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="12" y1="9" x2="8" y2="9"/></svg></div><div class="item-text"><div>이력서 · 자소서 관리</div><div class="item-desc">AI 피드백으로 자소서를 개선하세요</div></div></a>
+        <a class="drawer-item active" href="/profile-setup"><div class="item-icon purple" style="background:#f3e8ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div><div class="item-text"><div>맞춤 정보 설정</div><div class="item-desc">직무·기술스택·지역·연봉 설정</div></div></a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">설정</div>
+        <a class="drawer-item" href="/account"><div class="item-icon orange" style="background:#fff7ed"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="item-text"><div>계정 관리</div><div class="item-desc">계정 설정</div></div></a>
+    </nav>
+    <div class="drawer-footer"><button class="btn-logout-drawer" onclick="logout()">로그아웃</button></div>
+</div>
+
+<header>
+    <a class="logo" href="/dashboard">JOBMATE</a>
+    <div class="header-right">
+        <div class="user-chip"><div class="user-avatar" id="userAvatar">?</div><span class="user-name" id="userName"></span></div>
+        <div class="hamburger" id="hamburger" onclick="toggleDrawer()"><span></span><span></span><span></span></div>
+    </div>
+</header>
+
+<div class="pb-section">
+    <div class="pb-card">
+        <div class="pb-header"><span class="pb-title">프로필 완성도</span><span class="pb-pct" id="pbPct">0%</span></div>
+        <div class="pb-bar"><div class="pb-fill" id="pbFill" style="width:0%"></div></div>
+        <div class="pb-list" id="pbList"></div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="page-title">
+        <h2>맞춤 정보 설정하기</h2>
+        <p>해당되는 직무와 기술스택을 고르세요.</p>
+    </div>
+
+    <div class="section">
+        <div class="category-search-row"><input type="text" id="jobSearchInput" placeholder="직무 검색 예: 백엔드, React, DevOps"></div>
+        <div class="selector-panel">
+            <div class="selector-head"><div class="selector-head-title">직무 선택</div><div class="selector-head-sub">대분류 1개 선택 후 세부 직무 1개 선택</div></div>
+            <div class="selector-body">
+                <div class="left-panel"><div class="left-list" id="jobLeftList"></div></div>
+                <div class="right-panel">
+                    <div class="field-box">
+                        <div class="field-row"><div class="field-title">직무·직업</div><div class="field-content" id="jobSecondList"></div></div>
+                        <div class="field-row"><div class="field-title">세부 직무</div><div class="field-content" id="jobLeafList"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="selected-box">
+            <div class="selected-title">선택된 희망 직무</div>
+            <div class="selected-list" id="selectedJobList"><span class="selected-empty">아직 선택된 직무가 없습니다.</span></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-label">경력 <span class="req">*</span></div>
+        <div class="chip-group career-chips" id="careerChips">
+            <div class="chip" data-value="신입">신입</div>
+            <div class="chip" data-value="주니어 (1~3년)">주니어 (1~3년)</div>
+            <div class="chip" data-value="미들 (3~5년)">미들 (3~5년)</div>
+            <div class="chip" data-value="시니어 (5년+)">시니어 (5년+)</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-label">기술 스택<span class="hint">(좌측 대분류 선택 → 우측 항목 여러 개 선택)</span></div>
+        <div class="category-search-row"><input type="text" id="stackSearchInput" placeholder="스택 검색 예: Spring Boot, React, AWS"></div>
+        <div class="selector-panel">
+            <div class="selector-head"><div class="selector-head-title">기술 스택 선택</div><div class="selector-head-sub">여러 개 선택 가능</div></div>
+            <div class="selector-body">
+                <div class="left-panel"><div class="left-list" id="stackLeftList"></div></div>
+                <div class="right-panel">
+                    <div class="field-box">
+                        <div class="field-row"><div class="field-title">기술스택</div><div class="field-content" id="stackItemList"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="selected-box">
+            <div class="selected-title">선택된 기술 스택</div>
+            <div class="selected-list" id="selectedStackList"><span class="selected-empty">아직 선택된 스택이 없습니다.</span></div>
+        </div>
+    </div>
+
+    <!-- 근무 위치 (GPS/주소) -->
+    <div class="section">
+        <div class="section-label">내 위치 및 통근 허용 거리 <span class="hint">(거리 기반 매칭에 사용)</span></div>
+        <div class="location-box">
+            <div style="font-size:12px;color:var(--text-sub);margin-bottom:12px;">집 주소나 현재 위치를 입력하거나 GPS로 설정하세요.</div>
+            <div class="location-input-row">
+                <input type="text" id="locationInput" placeholder="예: 서울시 강남구 역삼동, 역곡역 등">
+                <button class="btn-gps" onclick="getGPS()">GPS</button>
+                <button class="btn-search" onclick="searchLocation()">검색</button>
+            </div>
+            <div class="location-result" id="locationResult"></div>
+            <div class="distance-row">
+                <div class="distance-label-row"><span>허용 최대 거리</span><strong id="distanceVal">20km</strong></div>
+                <input type="range" id="maxDistance" min="5" max="100" step="5" value="20" oninput="updateDistance()">
+                <div class="distance-marks"><span>5km</span><span>25km</span><span>50km</span><span>75km</span><span>100km</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ 희망 근무 지역 — 선택사항, 프로필 완성도 무관 -->
+    <div class="section">
+        <div class="section-label">
+            희망 근무 지역
+            <span class="optional-badge">선택사항</span>
+            <span class="hint">(위치 미설정 시 사용 · 프로필 완성도에 영향 없음)</span>
+        </div>
+        <div class="chip-group" id="locationChips">
+            <div class="chip" data-value="서울">서울</div>
+            <div class="chip" data-value="경기">경기</div>
+            <div class="chip" data-value="판교">판교</div>
+            <div class="chip" data-value="인천">인천</div>
+            <div class="chip" data-value="부산">부산</div>
+            <div class="chip" data-value="대전">대전</div>
+            <div class="chip" data-value="재택/원격">재택/원격</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-label">희망 연봉 범위</div>
+        <div class="salary-section">
+            <div class="salary-row">
+                <div class="salary-row-label"><span>최소 연봉</span><strong id="minVal">4,000만원</strong></div>
+                <input type="range" id="minSalary" min="2000" max="10000" step="500" value="4000" oninput="updateSalary()">
+            </div>
+            <div class="salary-row">
+                <div class="salary-row-label"><span>최대 연봉</span><strong id="maxVal">6,000만원</strong></div>
+                <input type="range" id="maxSalary" min="2000" max="10000" step="500" value="6000" oninput="updateSalary()">
+            </div>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section">
+        <div class="section-label">매칭 가중치 <span class="hint">(총합 100 권장)</span></div>
+        <div class="weight-section">
+            <div class="weight-row"><div class="weight-row-label"><span>직무 일치도</span><strong id="wJobVal">40점</strong></div><input type="range" id="wJob" min="0" max="100" step="5" value="40" oninput="updateWeights()"></div>
+            <div class="weight-row"><div class="weight-row-label"><span>기술 스택</span><strong id="wStackVal">30점</strong></div><input type="range" id="wStack" min="0" max="100" step="5" value="30" oninput="updateWeights()"></div>
+            <div class="weight-row"><div class="weight-row-label"><span>근무 지역/거리</span><strong id="wLocationVal">20점</strong></div><input type="range" id="wLocation" min="0" max="100" step="5" value="20" oninput="updateWeights()"></div>
+            <div class="weight-row"><div class="weight-row-label"><span>희망 연봉</span><strong id="wSalaryVal">10점</strong></div><input type="range" id="wSalary" min="0" max="100" step="5" value="10" oninput="updateWeights()"></div>
+            <div class="weight-total-box ok" id="weightTotalBox"><span>설정 저장하기</span><span class="total-num" id="weightTotal">100점 ✓</span></div>
+        </div>
+    </div>
+
+    <button class="btn-submit" onclick="submitProfile()">프로필 저장하기</button>
+    <div class="message" id="message"></div>
+</div>
+
+<script>
+    let memberId = null;
+    let selectedCareer = '';
+    let selectedLocation = '';
+    let preferredLat = null;
+    let preferredLng = null;
+    let preferredAddress = '';
+    let jobTree = [], stackTree = [];
+    let activeJobRoot = null, activeJobSecond = null, selectedJob = null;
+    let activeStackRoot = null, selectedStacks = [];
+
+    // ✅ 프로필 완성도: 희망 근무 지역(selectedLocation) 제외, GPS/주소 기준만
+    const PB_ITEMS = [
+        { label: '희망 직무',  check: () => !!selectedJob },
+        { label: '경력',       check: () => selectedCareer !== '' },
+        { label: '기술 스택',  check: () => selectedStacks.length > 0 },
+        { label: '내 위치 설정', check: () => preferredLat !== null || preferredAddress !== '' },
+        { label: '가중치 100', check: () => {
+            try { return [...document.querySelectorAll('#wJob,#wStack,#wLocation,#wSalary')].reduce((a,e)=>a+parseInt(e.value),0) === 100; } catch { return false; }
+        }},
+    ];
+
+    function normalizeValue(v) { return String(v||'').trim().replace(/\s+/g,' '); }
+    function escapeHtml(v) { return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+    function updateProgress() {
+        const done = PB_ITEMS.filter(i=>{ try{return i.check();}catch{return false;} }).length;
+        const pct = Math.round((done/PB_ITEMS.length)*100);
+        document.getElementById('pbPct').textContent = pct+'%';
+        document.getElementById('pbFill').style.width = pct+'%';
+        document.getElementById('pbList').innerHTML = PB_ITEMS.map(i=>{
+            const ok=i.check(); return `<span class="pb-item ${ok?'done':'todo'}">${ok?'✓':'○'} ${i.label}</span>`;
+        }).join('');
+    }
+
+    function categoryContainsKeyword(node,keyword) {
+        const kw=normalizeValue(keyword).toLowerCase(); if(!kw) return true;
+        if(normalizeValue(node.name).toLowerCase().includes(kw)) return true;
+        return (node.children||[]).some(child=>categoryContainsKeyword(child,kw));
+    }
+
+    async function loadCategories() {
+        const [jobRes,stackRes] = await Promise.all([fetch('/api/categories?type=JOB'),fetch('/api/categories?type=STACK')]);
+        if(!jobRes.ok||!stackRes.ok) throw new Error('카테고리 조회 실패');
+        jobTree = await jobRes.json(); stackTree = await stackRes.json();
+        if(jobTree.length) activeJobRoot=jobTree[0];
+        if(stackTree.length) activeStackRoot=stackTree[0];
+    }
+
+    function renderJobPanel() {
+        const keyword = document.getElementById('jobSearchInput').value.trim();
+        const filteredRoots = jobTree.filter(root=>categoryContainsKeyword(root,keyword));
+        const left = document.getElementById('jobLeftList');
+        if(!filteredRoots.length){ left.innerHTML=`<div class="empty-block">검색 결과가 없습니다.</div>`; document.getElementById('jobSecondList').innerHTML=`<div class="empty-block">표시할 직무가 없습니다.</div>`; document.getElementById('jobLeafList').innerHTML=`<div class="empty-block">표시할 세부 직무가 없습니다.</div>`; return; }
+        if(!activeJobRoot||!filteredRoots.some(x=>x.id===activeJobRoot.id)){ activeJobRoot=filteredRoots[0]; activeJobSecond=null; }
+        left.innerHTML = filteredRoots.map(root=>`<button type="button" class="left-item ${activeJobRoot&&activeJobRoot.id===root.id?'active':''}" onclick="selectJobRoot(${root.id})">${escapeHtml(root.name)}</button>`).join('');
+        renderJobSecondAndLeaf();
+    }
+    function selectJobRoot(id){ activeJobRoot=jobTree.find(x=>x.id===id)||null; activeJobSecond=null; renderJobPanel(); }
+    function renderJobSecondAndLeaf() {
+        const sw=document.getElementById('jobSecondList'), lw=document.getElementById('jobLeafList');
+        const keyword=document.getElementById('jobSearchInput').value.trim().toLowerCase();
+        if(!activeJobRoot){ sw.innerHTML=`<div class="empty-block">대분류를 선택하세요.</div>`; lw.innerHTML=`<div class="empty-block">직무를 선택하세요.</div>`; return; }
+        let seconds=activeJobRoot.children||[];
+        if(keyword) seconds=seconds.filter(x=>categoryContainsKeyword(x,keyword));
+        if(!seconds.length){ sw.innerHTML=`<div class="empty-block">표시할 직무가 없습니다.</div>`; lw.innerHTML=`<div class="empty-block">표시할 세부 직무가 없습니다.</div>`; return; }
+        if(!activeJobSecond||!seconds.some(x=>x.id===activeJobSecond.id)) activeJobSecond=seconds[0];
+        sw.innerHTML=seconds.map(item=>`<button type="button" class="opt ${activeJobSecond&&activeJobSecond.id===item.id?'active':''}" onclick="selectJobSecond(${item.id})">${escapeHtml(item.name)}</button>`).join('');
+        let leafs=activeJobSecond.children||[];
+        if(keyword) leafs=leafs.filter(x=>categoryContainsKeyword(x,keyword));
+        if(!leafs.length){ lw.innerHTML=`<div class="empty-block">표시할 세부 직무가 없습니다.</div>`; return; }
+        lw.innerHTML=leafs.map(item=>`<button type="button" class="opt ${selectedJob&&selectedJob.id===item.id?'selected':''}" onclick="selectJobLeaf(${item.id})">${escapeHtml(item.name)}</button>`).join('');
+    }
+    function selectJobSecond(id){ if(!activeJobRoot) return; activeJobSecond=(activeJobRoot.children||[]).find(x=>x.id===id)||null; renderJobSecondAndLeaf(); }
+    function selectJobLeaf(id) {
+        if(!activeJobSecond) return;
+        const found=(activeJobSecond.children||[]).find(x=>x.id===id); if(!found) return;
+        selectedJob={id:found.id,name:found.name,rootName:activeJobRoot?activeJobRoot.name:'',secondName:activeJobSecond?activeJobSecond.name:''};
+        renderJobSecondAndLeaf(); renderSelectedJob(); updateProgress();
+    }
+    function renderSelectedJob() {
+        const box=document.getElementById('selectedJobList');
+        if(!selectedJob){ box.innerHTML=`<span class="selected-empty">아직 선택된 직무가 없습니다.</span>`; return; }
+        box.innerHTML=`<span class="selected-tag">${escapeHtml(selectedJob.rootName)} / ${escapeHtml(selectedJob.secondName)} / ${escapeHtml(selectedJob.name)}<button type="button" onclick="clearSelectedJob()">×</button></span>`;
+    }
+    function clearSelectedJob(){ selectedJob=null; renderSelectedJob(); renderJobSecondAndLeaf(); updateProgress(); }
+
+    function renderStackPanel() {
+        const keyword=document.getElementById('stackSearchInput').value.trim();
+        const filteredRoots=stackTree.filter(root=>categoryContainsKeyword(root,keyword));
+        const left=document.getElementById('stackLeftList');
+        if(!filteredRoots.length){ left.innerHTML=`<div class="empty-block">검색 결과가 없습니다.</div>`; document.getElementById('stackItemList').innerHTML=`<div class="empty-block">표시할 스택이 없습니다.</div>`; return; }
+        if(!activeStackRoot||!filteredRoots.some(x=>x.id===activeStackRoot.id)) activeStackRoot=filteredRoots[0];
+        left.innerHTML=filteredRoots.map(root=>`<button type="button" class="left-item ${activeStackRoot&&activeStackRoot.id===root.id?'active':''}" onclick="selectStackRoot(${root.id})">${escapeHtml(root.name)}</button>`).join('');
+        renderStackItems();
+    }
+    function selectStackRoot(id){ activeStackRoot=stackTree.find(x=>x.id===id)||null; renderStackPanel(); }
+    function flattenStackItems(root) {
+        if(!root) return [];
+        const result=[], children=root.children||[];
+        children.forEach(child=>{
+            if(child.children&&child.children.length) child.children.forEach(grand=>result.push({id:grand.id,name:grand.name,groupName:child.name}));
+            else result.push({id:child.id,name:child.name,groupName:root.name});
+        });
+        return result;
+    }
+    function renderStackItems() {
+        const wrap=document.getElementById('stackItemList');
+        const keyword=document.getElementById('stackSearchInput').value.trim().toLowerCase();
+        if(!activeStackRoot){ wrap.innerHTML=`<div class="empty-block">대분류를 선택하세요.</div>`; return; }
+        let items=flattenStackItems(activeStackRoot);
+        if(keyword) items=items.filter(item=>normalizeValue(item.name).toLowerCase().includes(keyword)||normalizeValue(item.groupName).toLowerCase().includes(keyword));
+        if(!items.length){ wrap.innerHTML=`<div class="empty-block">표시할 기술 스택이 없습니다.</div>`; return; }
+        wrap.innerHTML=items.map(item=>`<button type="button" class="opt ${isSelectedStack(item.id)?'selected':''}" onclick="toggleStack(${item.id},'${escapeHtml(item.name).replace(/'/g,"\\'")}')"> ${escapeHtml(item.name)}</button>`).join('');
+    }
+    function isSelectedStack(id){ return selectedStacks.some(x=>x.id===id); }
+    function toggleStack(id,name) {
+        const idx=selectedStacks.findIndex(x=>x.id===id);
+        if(idx>=0) selectedStacks.splice(idx,1); else { selectedStacks.push({id,name}); selectedStacks.sort((a,b)=>a.name.localeCompare(b.name,'ko')); }
+        renderSelectedStacks(); renderStackItems(); updateProgress();
+    }
+    function removeStack(id){ selectedStacks=selectedStacks.filter(x=>x.id!==id); renderSelectedStacks(); renderStackItems(); updateProgress(); }
+    function renderSelectedStacks() {
+        const box=document.getElementById('selectedStackList');
+        if(!selectedStacks.length){ box.innerHTML=`<span class="selected-empty">아직 선택된 스택이 없습니다.</span>`; return; }
+        box.innerHTML=selectedStacks.map(item=>`<span class="selected-tag">${escapeHtml(item.name)}<button type="button" onclick="removeStack(${item.id})">×</button></span>`).join('');
+    }
+
+    function findJobLeafByName(name) {
+        const target=normalizeValue(name).toLowerCase();
+        for(const root of jobTree) for(const second of(root.children||[])) for(const leaf of(second.children||[])) if(normalizeValue(leaf.name).toLowerCase()===target) return{root,second,leaf};
+        return null;
+    }
+    function findStackByName(name) {
+        const target=normalizeValue(name).toLowerCase();
+        for(const root of stackTree){ const found=flattenStackItems(root).find(x=>normalizeValue(x.name).toLowerCase()===target); if(found) return found; }
+        return null;
+    }
+
+    function bindCareerChips() {
+        document.querySelectorAll('#careerChips .chip').forEach(chip=>{
+            chip.addEventListener('click',()=>{ document.querySelectorAll('#careerChips .chip').forEach(c=>c.classList.remove('selected')); chip.classList.add('selected'); selectedCareer=chip.dataset.value; updateProgress(); });
+        });
+    }
+    function bindLocationChips() {
+        document.querySelectorAll('#locationChips .chip').forEach(chip=>{
+            chip.addEventListener('click',()=>{
+                if(chip.classList.contains('selected')) {
+                    // 이미 선택된 칩 → 해제
+                    chip.classList.remove('selected');
+                    selectedLocation = '';
+                } else {
+                    // 다른 칩 모두 해제 후 선택
+                    document.querySelectorAll('#locationChips .chip').forEach(c=>c.classList.remove('selected'));
+                    chip.classList.add('selected');
+                    selectedLocation = chip.dataset.value;
+                }
+                // 선택사항이므로 updateProgress() 호출 안 함
+            });
+        });
+    }
+    function bindInputs() {
+        document.getElementById('jobSearchInput').addEventListener('input',renderJobPanel);
+        document.getElementById('stackSearchInput').addEventListener('input',renderStackPanel);
+        document.getElementById('locationInput').addEventListener('keydown',e=>{ if(e.key==='Enter') searchLocation(); });
+        // ✅ 주소 직접 입력 시 preferredAddress에 즉시 반영 (저장 누를 때 DB에 들어가도록)
+        document.getElementById('locationInput').addEventListener('input',()=>{
+            const val = document.getElementById('locationInput').value.trim();
+            if(val) { preferredAddress = val; updateProgress(); }
+        });
+    }
+
+    async function loadProfile() {
+        try {
+            const res=await fetch('/api/members/'+memberId+'/profile');
+            if(!res.ok) return;
+            const p=await res.json();
+            if(p.desiredJob){ const found=findJobLeafByName(p.desiredJob); if(found){ activeJobRoot=found.root; activeJobSecond=found.second; selectedJob={id:found.leaf.id,name:found.leaf.name,rootName:found.root.name,secondName:found.second.name}; } }
+            if(p.techStack){ const names=String(p.techStack).split(',').map(x=>normalizeValue(x)).filter(Boolean); selectedStacks=[]; names.forEach(name=>{ const found=findStackByName(name); if(found&&!selectedStacks.some(x=>x.id===found.id)) selectedStacks.push({id:found.id,name:found.name}); }); selectedStacks.sort((a,b)=>a.name.localeCompare(b.name,'ko')); }
+            if(p.careerLevel){ document.querySelectorAll('#careerChips .chip').forEach(c=>{ if(c.dataset.value===p.careerLevel.trim()){ c.classList.add('selected'); selectedCareer=p.careerLevel; } }); }
+            if(p.location){ document.querySelectorAll('#locationChips .chip').forEach(c=>{ if(c.dataset.value===p.location.trim()){ c.classList.add('selected'); selectedLocation=p.location; } }); }
+            if(p.preferredLat&&p.preferredLng){ preferredLat=p.preferredLat; preferredLng=p.preferredLng; preferredAddress=p.preferredAddress||''; if(preferredAddress){ document.getElementById('locationInput').value=preferredAddress; setLocationResult(preferredAddress,true); } }
+            if(p.maxDistanceKm) document.getElementById('maxDistance').value=p.maxDistanceKm;
+            if(p.minSalary) document.getElementById('minSalary').value=p.minSalary;
+            if(p.maxSalary) document.getElementById('maxSalary').value=p.maxSalary;
+            if(p.weightJob!=null) document.getElementById('wJob').value=p.weightJob;
+            if(p.weightStack!=null) document.getElementById('wStack').value=p.weightStack;
+            if(p.weightLocation!=null) document.getElementById('wLocation').value=p.weightLocation;
+            if(p.weightSalary!=null) document.getElementById('wSalary').value=p.weightSalary;
+        } catch(e){ console.log('[loadProfile] 오류:',e); }
+    }
+
+    async function searchLocation() {
+        const inp=document.getElementById('locationInput').value.trim();
+        if(!inp){ setLocationResult('주소를 입력해주세요.',false); return; }
+        setLocationResult('주소 검색 중...',null);
+        try {
+            const res=await fetch('/api/members/geocode?address='+encodeURIComponent(inp));
+            if(!res.ok) throw new Error();
+            const data=await res.json();
+            if(data.lat&&data.lng){
+                preferredLat=data.lat; preferredLng=data.lng;
+                preferredAddress=data.address||inp;
+                document.getElementById('locationInput').value=preferredAddress;
+                setLocationResult(preferredAddress,true);
+                updateProgress();
+            } else { setLocationResult('주소를 찾을 수 없습니다.',false); }
+        } catch { setLocationResult('검색 중 오류가 발생했습니다.',false); }
+    }
+
+    function getGPS() {
+        if(!navigator.geolocation){ setLocationResult('이 브라우저는 GPS를 지원하지 않습니다.',false); return; }
+        setLocationResult('현재 위치 감지 중...',null);
+        navigator.geolocation.getCurrentPosition(async pos=>{
+            preferredLat=pos.coords.latitude; preferredLng=pos.coords.longitude;
+            try {
+                const res=await fetch('/api/members/reverse-geocode?lat='+preferredLat+'&lng='+preferredLng);
+                if(res.ok){ const data=await res.json(); preferredAddress=data.address||(preferredLat.toFixed(4)+', '+preferredLng.toFixed(4)); }
+                else preferredAddress=preferredLat.toFixed(4)+', '+preferredLng.toFixed(4);
+            } catch { preferredAddress=preferredLat.toFixed(4)+', '+preferredLng.toFixed(4); }
+            document.getElementById('locationInput').value=preferredAddress;
+            setLocationResult('위치 설정 완료: '+preferredAddress,true);
+            updateProgress();
+        }, err=>{
+            let m=''; if(err.code===1) m='GPS 권한이 거부되었습니다. 주소를 직접 입력해주세요.'; else if(err.code===2) m='현재 위치를 확인할 수 없습니다.'; else m='GPS 요청 시간이 초과되었습니다.';
+            setLocationResult(m,false);
+        },{timeout:8000,maximumAge:60000});
+    }
+
+    function setLocationResult(msg,ok){ const el=document.getElementById('locationResult'); el.textContent=msg; el.className='location-result'+(ok===true?' ok':ok===false?' err':''); }
+    function updateDistance(){ document.getElementById('distanceVal').textContent=document.getElementById('maxDistance').value+'km'; updateProgress(); }
+    function updateSalary(){ document.getElementById('minVal').textContent=Number(document.getElementById('minSalary').value).toLocaleString()+'만원'; document.getElementById('maxVal').textContent=Number(document.getElementById('maxSalary').value).toLocaleString()+'만원'; }
+    function updateWeights(){
+        const j=parseInt(document.getElementById('wJob').value),s=parseInt(document.getElementById('wStack').value),l=parseInt(document.getElementById('wLocation').value),sal=parseInt(document.getElementById('wSalary').value);
+        document.getElementById('wJobVal').textContent=j+'점'; document.getElementById('wStackVal').textContent=s+'점'; document.getElementById('wLocationVal').textContent=l+'점'; document.getElementById('wSalaryVal').textContent=sal+'점';
+        const total=j+s+l+sal, box=document.getElementById('weightTotalBox'), num=document.getElementById('weightTotal');
+        if(total===100){ box.className='weight-total-box ok'; num.textContent='100점 ✓'; } else { box.className='weight-total-box warn'; num.textContent=total+'점 (100이 되도록 조정하세요)'; }
+        updateProgress();
+    }
+
+    async function submitProfile() {
+        if(!selectedJob){ showMessage('희망 직무를 선택해주세요.',false); return; }
+        if(!selectedCareer){ showMessage('경력을 선택해주세요.',false); return; }
+        // ✅ 주소 입력만 하고 검색 안 눌렀을 때도 preferredAddress 저장
+        const inputVal = document.getElementById('locationInput').value.trim();
+        if(inputVal && !preferredAddress) preferredAddress = inputVal;
+        const body={
+            desiredJob:selectedJob.name, careerLevel:selectedCareer,
+            techStack:selectedStacks.map(x=>x.name).join(', '),
+            location:selectedLocation, preferredLat, preferredLng, preferredAddress,
+            maxDistanceKm:parseInt(document.getElementById('maxDistance').value),
+            minSalary:parseInt(document.getElementById('minSalary').value),
+            maxSalary:parseInt(document.getElementById('maxSalary').value),
+            weightJob:parseInt(document.getElementById('wJob').value),
+            weightStack:parseInt(document.getElementById('wStack').value),
+            weightLocation:parseInt(document.getElementById('wLocation').value),
+            weightSalary:parseInt(document.getElementById('wSalary').value)
+        };
+        const res=await fetch('/api/members/'+memberId+'/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const resText=await res.text();
+        if(res.ok){ showMessage('저장되었습니다! 대시보드로 이동합니다.',true); setTimeout(()=>location.href='/dashboard',1200); }
+        else showMessage('저장 오류 ('+res.status+'): '+resText,false);
+    }
+
+    function showMessage(text,success){ const msg=document.getElementById('message'); msg.style.display='block'; msg.className='message '+(success?'success':'error-msg'); msg.textContent=text; msg.scrollIntoView({behavior:'smooth',block:'center'}); }
+    function toggleDrawer(){ document.getElementById('drawer').classList.contains('open')?closeDrawer():openDrawer(); }
+    function openDrawer(){ document.getElementById('drawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); document.getElementById('hamburger').classList.add('open'); document.body.style.overflow='hidden'; }
+    function closeDrawer(){ document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); document.getElementById('hamburger').classList.remove('open'); document.body.style.overflow=''; }
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+    async function logout(){ await fetch('/api/members/logout',{method:'POST'}); location.href='/'; }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const meRes=await fetch('/api/members/me');
+            if(!meRes.ok){ location.href='/'; return; }
+            const me=await meRes.json();
+            memberId=me.id;
+            const displayName=me.name||me.email||'사용자';
+            document.getElementById('userName').textContent=displayName+'님';
+            document.getElementById('userAvatar').textContent=displayName.charAt(0);
+            document.getElementById('drawerUserName').textContent=displayName+'님';
+            document.getElementById('drawerAvatar').textContent=displayName.charAt(0);
+            bindCareerChips(); bindLocationChips(); bindInputs();
+            await loadCategories(); await loadProfile();
+            renderJobPanel(); renderStackPanel(); renderSelectedJob(); renderSelectedStacks();
+            updateDistance(); updateSalary(); updateWeights(); updateProgress();
+        } catch(e){ console.error(e); location.href='/'; }
+    });
+</script>
+</body>
+</html>

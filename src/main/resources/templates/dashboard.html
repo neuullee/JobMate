@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>JobMate - 대시보드</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --navy:#0f2340; --blue:#2563eb; --teal:#0891b2; --green:#059669; --amber:#d97706; --red:#dc2626; --bg:#f0f4f8; --card:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Pretendard',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+        .navbar { background:var(--navy); height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; position:sticky; top:0; z-index:100; }
+        .nav-logo { color:#fff; font-size:18px; font-weight:800; letter-spacing:2px; text-decoration:none; }
+        .nav-right { display:flex; align-items:center; gap:12px; }
+        .btn-user { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; padding:6px 14px; border-radius:20px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .btn-hamburger { background:none; border:none; cursor:pointer; padding:4px; display:flex; flex-direction:column; gap:5px; }
+        .btn-hamburger span { display:block; width:22px; height:2px; background:#fff; border-radius:2px; }
+        .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; opacity:0; pointer-events:none; transition:.3s; }
+        .drawer-overlay.open { opacity:1; pointer-events:all; }
+        .drawer { position:fixed; top:0; right:0; width:280px; height:100vh; background:#fff; z-index:201; transform:translateX(100%); transition:.3s; display:flex; flex-direction:column; }
+        .drawer.open { transform:translateX(0); }
+        .drawer-header { background:var(--navy); padding:20px; display:flex; align-items:center; justify-content:space-between; }
+        .drawer-header span { color:#fff; font-weight:700; font-size:16px; }
+        .drawer-close { background:none; border:none; color:#fff; font-size:22px; cursor:pointer; }
+        .drawer-nav { flex:1; overflow-y:auto; padding:16px 0; }
+        .drawer-section-title { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1px; padding:8px 20px 4px; }
+        .drawer-item { display:flex; align-items:center; gap:12px; padding:12px 20px; text-decoration:none; color:var(--text); transition:.2s; }
+        .drawer-item:hover { background:var(--bg); }
+        .drawer-item.active { background:#eff6ff; color:var(--blue); }
+        .d-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .drawer-divider { height:1px; background:var(--border); margin:8px 20px; }
+        .drawer-footer { padding:16px 20px; border-top:1px solid var(--border); }
+        .btn-logout { width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:14px; cursor:pointer; }
+        .main { max-width:900px; margin:0 auto; padding:24px 16px; }
+        .hero { background:var(--navy); border-radius:16px; padding:32px; color:#fff; display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+        .hero-left h2 { font-size:28px; font-weight:800; line-height:1.3; }
+        .hero-left h2 em { color:#38bdf8; font-style:normal; }
+        .hero-left p { margin-top:8px; color:rgba(255,255,255,.65); font-size:14px; }
+        .hero-stats { display:flex; gap:24px; }
+        .h-stat { text-align:center; }
+        .h-stat .num { font-size:28px; font-weight:800; }
+        .h-stat .lbl { font-size:12px; color:rgba(255,255,255,.65); margin-top:2px; }
+        .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+        .stat-card { background:var(--card); border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+        .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .stat-num { font-size:22px; font-weight:800; }
+        .stat-lbl { font-size:12px; color:var(--muted); margin-top:2px; }
+        .section { background:var(--card); border-radius:16px; padding:24px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+        .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+        .section-title { font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .section-sub { font-size:12px; color:var(--muted); }
+        .btn-more { font-size:13px; color:var(--blue); text-decoration:none; font-weight:500; }
+        .job-row { display:flex; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); text-decoration:none; color:var(--text); transition:.2s; cursor:pointer; }
+        .job-row:last-child { border-bottom:none; }
+        .job-row:hover { background:#f8faff; border-radius:8px; padding-left:8px; }
+        .job-rank { width:28px; font-size:13px; font-weight:700; color:var(--muted); flex-shrink:0; }
+        .job-rank.top { color:var(--blue); }
+        .job-company { width:120px; font-size:13px; font-weight:600; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .job-title { flex:1; font-size:14px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .job-score { font-size:13px; font-weight:700; color:var(--blue); background:#eff6ff; padding:3px 10px; border-radius:20px; flex-shrink:0; }
+        .profile-section { background:var(--card); border-radius:16px; padding:24px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+        .profile-header-title { font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+        .profile-pct { font-size:36px; font-weight:900; color:var(--navy); }
+        .profile-msg { font-size:13px; color:var(--muted); margin-top:4px; margin-bottom:16px; }
+        .progress-bar { height:8px; background:var(--border); border-radius:4px; overflow:hidden; margin-bottom:16px; }
+        .progress-fill { height:100%; background:linear-gradient(90deg,var(--blue),var(--teal)); border-radius:4px; transition:width 1s ease; }
+        .profile-items { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+        .p-item { display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+        .p-item-label { color:var(--muted); }
+        .p-item-val { font-weight:600; }
+        .p-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+        .btn-setup { display:block; width:100%; padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:10px; text-align:center; font-size:14px; font-weight:600; color:var(--text); text-decoration:none; transition:.2s; }
+        .btn-setup:hover { background:var(--border); }
+        .quick-section { margin-bottom:24px; }
+        .quick-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+        .quick-title { font-size:16px; font-weight:700; }
+        .btn-email { background:var(--blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; text-decoration:none; }
+        .features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+        .feature-card { background:var(--card); border-radius:16px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,.06); text-decoration:none; color:var(--text); transition:.2s; display:block; }
+        .feature-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
+        .fc-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+        .fc-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+        .fc-desc { font-size:12px; color:var(--muted); margin-bottom:12px; }
+        .fc-link { font-size:13px; color:var(--blue); font-weight:500; display:flex; align-items:center; gap:4px; }
+        .deadline-banner { background:linear-gradient(135deg,#fef2f2,#fee2e2); border:1px solid #fca5a5; border-radius:12px; padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:12px; }
+        .deadline-banner.hidden { display:none; }
+        @media(max-width:640px) { .stats-grid { grid-template-columns:1fr 1fr; } .features-grid { grid-template-columns:1fr 1fr; } .hero { flex-direction:column; gap:16px; } .hero-stats { gap:16px; } }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a class="nav-logo" href="/dashboard">JOBMATE</a>
+    <div class="nav-right">
+        <button class="btn-user" onclick="location.href='/profile-setup'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <span id="nav-username">최하늘님</span>
+        </button>
+        <button class="btn-hamburger" onclick="openDrawer()"><span></span><span></span><span></span></button>
+    </div>
+</nav>
+
+<div class="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer">
+    <div class="drawer-header"><span>JOBMATE 메뉴</span><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
+    <nav class="drawer-nav">
+        <div class="drawer-section-title">메인 메뉴</div>
+        <a class="drawer-item active" href="/dashboard"><div class="d-icon" style="background:#eff6ff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div><div style="font-size:14px;font-weight:600">대시보드</div><div style="font-size:12px;color:var(--muted)">홈 화면</div></div></a>
+        <a class="drawer-item" href="/jobs"><div class="d-icon" style="background:#f0fdf4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div><div><div style="font-size:14px;font-weight:600">공고 매칭</div><div style="font-size:12px;color:var(--muted)">맞춤 공고 확인</div></div></a>
+        <a class="drawer-item" href="/profile-setup"><div class="d-icon" style="background:#fefce8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div><div style="font-size:14px;font-weight:600">맞춤 정보 설정</div><div style="font-size:12px;color:var(--muted)">프로필 관리</div></div></a>
+        <a class="drawer-item" href="/cover-letter"><div class="d-icon" style="background:#f0fdfa"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div><div style="font-size:14px;font-weight:600">이력서·자소서 관리</div><div style="font-size:12px;color:var(--muted)">AI 피드백</div></div></a>
+        <a class="drawer-item" href="/interview"><div class="d-icon" style="background:#fdf4ff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><div style="font-size:14px;font-weight:600">AI 면접 코칭</div><div style="font-size:12px;color:var(--muted)">면접 준비</div></div></a>
+        <a class="drawer-item" href="/community"><div class="d-icon" style="background:#fff7ed"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div style="font-size:14px;font-weight:600">커뮤니티</div><div style="font-size:12px;color:var(--muted)">개발자 커뮤니티</div></div></a>
+        <a class="drawer-item" href="/interview-notes"><div class="d-icon" style="background:#fff1f2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div><div style="font-size:14px;font-weight:600">면접 오답노트</div><div style="font-size:12px;color:var(--muted)">오답 정리</div></div></a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-title">설정</div>
+        <!-- 교체 -->
+        <a class="drawer-item" href="/account">
+            <div class="d-icon" style="background:#f8fafc">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+            <div><div style="font-size:14px;font-weight:600">계정 관리</div><div style="font-size:12px;color:var(--muted)">계정 설정</div></div>
+        </a>    </nav>
+    <div class="drawer-footer"><button class="btn-logout" onclick="doLogout()">로그아웃</button></button></div>
+</div>
+
+<main class="main">
+    <div class="deadline-banner hidden" id="deadline-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="deadline-text" style="font-size:14px;color:#dc2626;font-weight:600"></span>
+    </div>
+
+    <div class="hero">
+        <div class="hero-left">
+            <div style="font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.5);margin-bottom:8px">WELCOME BACK</div>
+            <h2>안녕하세요,<br><em id="hero-name">최하늘</em>님!</h2>
+            <p>오늘도 취업 목표를 향해 한 걸음 더 나아가보세요.</p>
+        </div>
+        <div class="hero-stats">
+            <div class="h-stat"><div class="num" id="hero-match">-</div><div class="lbl">매칭 공고</div></div>
+            <div class="h-stat"><div class="num" id="hero-bookmark">-</div><div class="lbl">찜한 공고</div></div>
+            <div class="h-stat"><div class="num" id="hero-interview">-</div><div class="lbl">면접 연습</div></div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <a class="stat-card" href="/jobs" style="text-decoration:none;color:inherit;cursor:pointer;"><div class="stat-icon" style="background:#eff6ff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div><div class="stat-num" id="stat-match">-</div><div class="stat-lbl">매칭 공고</div></div></a>
+        <a class="stat-card" href="/jobs?filter=starred" style="text-decoration:none;color:inherit;cursor:pointer;"><div class="stat-icon" style="background:#fff7ed"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="stat-num" id="stat-bookmark">0</div><div class="stat-lbl">찜한 공고</div></div></a>
+        <a class="stat-card" href="/interview" style="text-decoration:none;color:inherit;cursor:pointer;"><div class="stat-icon" style="background:#fdf4ff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><div class="stat-num" id="stat-interview">-</div><div class="stat-lbl">면접 연습</div></div></a>
+    </div>
+
+    <!-- TOP 5 -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title"><span style="color:#f59e0b">🔥</span> TOP 매칭 공고<span class="section-sub">점수 높은 공고 순</span></div>
+            <a class="btn-more" href="/jobs">전체 보기 →</a>
+        </div>
+        <div id="top-jobs-list"><div style="text-align:center;padding:32px;color:var(--muted)">공고 불러오는 중...</div></div>
+    </div>
+
+    <!-- 프로필 완성도 (TOP5 바로 아래) -->
+    <div class="profile-section">
+        <div class="profile-header-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            프로필 완성도
+        </div>
+        <div class="profile-pct" id="profile-pct">-</div>
+        <div class="profile-msg" id="profile-msg">프로필을 불러오는 중...</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        <div class="profile-items" id="profile-items"></div>
+        <a class="btn-setup" href="/profile-setup">맞춤 정보 설정하기</a>
+    </div>
+
+    <!-- 빠른 이동 -->
+    <div class="quick-section">
+        <div class="quick-header">
+            <div class="quick-title">빠른 이동</div>
+            <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:13px;color:var(--muted)">자주 사용하는 기능에 바로 접근하세요</span>
+                <a class="btn-email" href="#" onclick="sendMatchEmail(); return false;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>맞춤 공고 메일 받기</a>
+            </div>
+        </div>
+        <div class="features-grid">
+            <a class="feature-card" href="/jobs"><div class="fc-icon" style="background:#f0fdf4"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div><div class="fc-title">공고 매칭</div><div class="fc-desc">내 프로필 기반으로 맞춤 채용공고를 점수순으로 확인하세요</div><div class="fc-link">공고 보러가기 →</div></a>
+            <a class="feature-card" href="/profile-setup"><div class="fc-icon" style="background:#fefce8"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div class="fc-title">맞춤 정보 설정</div><div class="fc-desc">직무, 기술스택, 지역, 연봉 등 매칭 기준을 설정하세요</div><div class="fc-link">맞춤 정보 설정하기 →</div></a>
+            <a class="feature-card" href="/cover-letter"><div class="fc-icon" style="background:#f0fdfa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div class="fc-title">이력서·자소서 관리</div><div class="fc-desc">자소서를 작성하고 AI 피드백으로 합격률을 높이세요</div><div class="fc-link">자소서 관리하기 →</div></a>
+            <a class="feature-card" href="/interview"><div class="fc-icon" style="background:#fdf4ff"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="fc-title">AI 면접 코칭</div><div class="fc-desc">AI가 직무별 예상 질문을 생성하고 답변 피드백을 제공합니다</div><div class="fc-link">연습 시작하기 →</div></a>
+            <a class="feature-card" href="/community"><div class="fc-icon" style="background:#fff7ed"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="fc-title">커뮤니티</div><div class="fc-desc">취업 후기, 면접 질문, 스터디 모집 등 개발자들과 소통하세요</div><div class="fc-link">커뮤니티 가기 →</div></a>
+            <a class="feature-card" href="/interview-notes"><div class="fc-icon" style="background:#fff1f2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="fc-title">면접 오답노트</div><div class="fc-desc">AI 면접 코칭의 질문·피드백을 저장하고 복습하세요</div><div class="fc-link">오답노트 열기 →</div></a>
+        </div>
+    </div>
+</main>
+
+<script>
+    function openDrawer() { document.querySelector('.drawer').classList.add('open'); document.querySelector('.drawer-overlay').classList.add('open'); }
+    function closeDrawer() { document.querySelector('.drawer').classList.remove('open'); document.querySelector('.drawer-overlay').classList.remove('open'); }
+
+    let memberId = null;
+
+    async function init() {
+        try {
+            const r = await fetch('/api/members/me');
+            if (!r.ok) { location.href = '/login'; return; }
+            const d = await r.json();
+            memberId = d.id;
+            const name = d.name || '사용자';
+            document.getElementById('hero-name').textContent = name;
+            document.getElementById('nav-username').textContent = name + '님';
+            await Promise.all([loadTopJobs(), loadStats(), loadProfile()]);
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadTopJobs() {
+        try {
+            const r = await fetch(`/api/jobs/match?memberId=${memberId}`);
+            const data = await r.json();
+            const allList = data.results || data || [];
+            const totalCount = allList.length;
+            const list = allList.slice(0, 5);
+            document.getElementById('hero-match').textContent = totalCount;
+            document.getElementById('stat-match').textContent = totalCount;
+            const el = document.getElementById('top-jobs-list');
+            if (!list.length) { el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">매칭 공고가 없습니다. 프로필을 먼저 설정해주세요.</div>'; return; }
+            el.innerHTML = list.map((result, i) => {
+                const job = result.job || result;
+                const score = result.totalScore || result.score || 0;
+                return `<a class="job-row" href="#" onclick="goToJobDetail(${i}); return false;"><div class="job-rank ${i < 3 ? 'top' : ''}">${i+1}</div><div class="job-company">${job.company || job.companyName || '-'}</div><div class="job-title">${job.title || job.jobTitle || '-'}</div><div class="job-score">${Math.round(score)}점</div></a>`;
+            }).join('');
+            window._topJobsList = list;
+        } catch(e) { document.getElementById('top-jobs-list').innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">공고를 불러오지 못했습니다.</div>'; }
+    }
+
+    function goToJobDetail(index) {
+        const result = window._topJobsList[index];
+        sessionStorage.setItem('selectedJob', JSON.stringify(result));
+        location.href = '/job-detail';
+    }
+
+    // 교체
+    async function loadStats() {
+        try {
+            const raw = localStorage.getItem('jm_bookmarks');
+            const bms = raw ? JSON.parse(raw) : [];
+            const cnt = Array.isArray(bms) ? bms.length : (bms instanceof Set ? bms.size : 0);
+            document.getElementById('stat-bookmark').textContent = cnt;
+            document.getElementById('hero-bookmark').textContent = cnt;
+        } catch(e) {
+            document.getElementById('stat-bookmark').textContent = 0;
+            document.getElementById('hero-bookmark').textContent = 0;
+        }
+        try {
+            const raw = localStorage.getItem('jm_interview_history');
+            const history = raw ? JSON.parse(raw) : [];
+            const cnt = Array.isArray(history) ? history.length : 0;
+            document.getElementById('stat-interview').textContent = cnt;
+            document.getElementById('hero-interview').textContent = cnt;
+        } catch(e) {
+            document.getElementById('stat-interview').textContent = 0;
+            document.getElementById('hero-interview').textContent = 0;
+        }
+            }
+
+    function shortenTechStack(val) {
+        if (!val) return '';
+        const items = val.split(/[,，\s]+/).map(s => s.trim()).filter(Boolean);
+        if (items.length <= 2) return items.join(', ');
+        return `${items[0]} 외 ${items.length - 1}개`;
+    }
+
+    async function loadProfile() {
+        try {
+            const r = await fetch(`/api/members/${memberId}/profile`);
+            if (!r.ok) return;
+            const p = await r.json();
+            const fields = [
+                { label: '희망 직무', val: p.desiredJob || p.desired_job },
+                { label: '경력',     val: p.careerLevel || p.career_level },
+                { label: '기술 스택', val: p.techStack || p.tech_stack, shorten: true },
+                { label: '내 위치 설정', val: p.preferredAddress || (p.preferredLat ? '위치 설정됨' : null) },
+            ];
+            const filled = fields.filter(f => f.val && f.val !== '').length;
+            const pct = Math.round((filled / fields.length) * 100);
+            document.getElementById('profile-pct').textContent = pct + '%';
+            document.getElementById('progress-fill').style.width = pct + '%';
+            document.getElementById('profile-msg').innerHTML = pct === 100 ? '프로필 완성! 최적의 매칭을 받고 있어요 🎉' : '프로필 완성도를 높이면 더 좋은 공고를 추천받아요';
+            document.getElementById('profile-items').innerHTML = fields.map(f => {
+                const displayVal = f.shorten ? shortenTechStack(f.val) : (f.val || '미입력');
+                return `<div class="p-item"><span class="p-item-label"><span class="p-dot" style="background:${f.val ? '#059669' : '#cbd5e1'}"></span>${f.label}</span><span class="p-item-val">${displayVal || '미입력'}</span></div>`;
+            }).join('');
+        } catch(e) {}
+    }
+
+    init();
+
+    async function sendMatchEmail() {
+        try {
+            const btn = document.querySelector('.btn-email');
+            btn.textContent = '전송 중...';
+            btn.style.pointerEvents = 'none';
+
+            const res = await fetch('/api/email/send-top-jobs', { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok) {
+                alert('✅ 맞춤 공고 상위 5개를 이메일로 전송했습니다!');
+            } else {
+                alert('❌ 전송 실패: ' + (data.message || '다시 시도해주세요'));
+            }
+        } catch(e) {
+            alert('❌ 오류가 발생했습니다. 다시 시도해주세요.');
+        } finally {
+            const btn = document.querySelector('.btn-email');
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>맞춤 공고 메일 받기`;
+            btn.style.pointerEvents = 'auto';
+        }
+    }
+    function doLogout() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/logout';
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+</body>
+</html>

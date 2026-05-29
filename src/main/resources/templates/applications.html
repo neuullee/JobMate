@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 지원 현황</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>
+        :root {
+            --navy:#0f2340; --navy2:#162d4a; --navy3:#1e3a5f;
+            --accent:#3b82f6; --accent2:#60a5fa;
+            --bg:#f0f4f8; --surface:#ffffff;
+            --border:#dce8f0; --text:#1a2a3a; --text-sub:#6b7f96;
+            --green:#16a34a; --yellow:#b45309; --purple:#7c3aed;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Pretendard','Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh}
+
+        /* ── 헤더 ── */
+        header{background:var(--navy);padding:0 48px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 1px 0 rgba(255,255,255,.06)}
+        .logo{color:white;font-size:1.15rem;font-weight:900;letter-spacing:5px;text-decoration:none}
+        .header-right{display:flex;align-items:center;gap:10px}
+        .user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:4px 14px 4px 5px}
+        .user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white}
+        .user-name{color:rgba(255,255,255,.8);font-size:13px;font-weight:500}
+        .hamburger{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+        .hamburger span{display:block;width:16px;height:1.5px;background:rgba(255,255,255,.8);border-radius:2px;transition:all .3s}
+        .hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+        .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+        .hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+
+        /* ── 드로어 ── */
+        .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;opacity:0;visibility:hidden;transition:all .3s}
+        .drawer-overlay.open{opacity:1;visibility:visible}
+        .drawer{position:fixed;top:0;right:-300px;width:280px;height:100vh;background:white;z-index:400;display:flex;flex-direction:column;transition:right .32s cubic-bezier(.34,1.56,.64,1);box-shadow:-6px 0 32px rgba(0,0,0,.12)}
+        .drawer.open{right:0}
+        .drawer-header{background:var(--navy);padding:22px 20px 18px;position:relative;flex-shrink:0}
+        .drawer-logo{color:white;font-size:.95rem;font-weight:900;letter-spacing:4px;margin-bottom:14px}
+        .drawer-user{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border-radius:10px;padding:10px 13px}
+        .d-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0}
+        .d-name{color:white;font-size:13.5px;font-weight:700}
+        .d-sub{color:rgba(255,255,255,.45);font-size:11px;margin-top:1px}
+        .drawer-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.1);border:none;color:white;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .drawer-nav{flex:1;padding:10px;overflow-y:auto}
+        .drawer-section-label{font-size:10px;font-weight:700;color:var(--text-sub);letter-spacing:2px;text-transform:uppercase;padding:10px 12px 5px}
+        .drawer-item{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--text);cursor:pointer;text-decoration:none;transition:all .18s;margin-bottom:2px}
+        .drawer-item:hover{background:#f0f4f8;color:var(--navy)}
+        .drawer-item.active{background:#eef4ff;color:var(--navy)}
+        .item-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .item-text{flex:1}
+        .item-desc{font-size:11px;color:var(--text-sub);font-weight:400;margin-top:1px}
+        .drawer-divider{height:1px;background:var(--border);margin:7px 12px}
+        .drawer-footer{padding:14px 10px;border-top:1px solid var(--border);flex-shrink:0}
+        .btn-logout-drawer{width:100%;padding:11px;border-radius:10px;background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+        .btn-logout-drawer:hover{background:#fecaca}
+
+        /* ── 메인 ── */
+        main{max-width:1200px;margin:0 auto;padding:40px 28px 80px}
+
+        /* ── 페이지 헤더 ── */
+        .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+        .page-title{font-size:22px;font-weight:800;color:var(--navy)}
+        .page-sub{font-size:13px;color:var(--text-sub);margin-top:3px}
+        .btn-add{display:flex;align-items:center;gap:7px;padding:10px 18px;background:var(--navy);color:white;border:none;border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+        .btn-add:hover{background:var(--navy3)}
+
+        /* ── 탭 ── */
+        .tab-bar{display:flex;gap:8px;margin-bottom:24px;border-bottom:2px solid var(--border);padding-bottom:0}
+        .tab-btn{padding:10px 20px;border:none;background:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--text-sub);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
+        .tab-btn.active{color:var(--navy);border-bottom-color:var(--navy)}
+        .tab-btn:hover:not(.active){color:var(--text)}
+
+        /* ── 칸반 ── */
+        .kanban-board{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;min-height:500px}
+        .kanban-col{background:white;border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:200px}
+        .col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+        .col-title{font-size:12px;font-weight:700;color:var(--text-sub);letter-spacing:.5px}
+        .col-count{font-size:11px;font-weight:700;color:white;background:var(--accent);border-radius:20px;padding:1px 7px}
+        .app-card{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all .2s;position:relative}
+        .app-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(15,35,64,.1);border-color:#c4d8ea}
+        .app-card-company{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:3px}
+        .app-card-job{font-size:11.5px;color:var(--text-sub);margin-bottom:8px}
+        .app-card-date{font-size:11px;color:var(--text-sub)}
+        /* ✅ 마감일 D-day 뱃지 */
+        .deadline-badge{display:inline-block;margin-top:5px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700}
+        .deadline-badge.urgent{background:#fee2e2;color:#dc2626}
+        .deadline-badge.soon{background:#fef3c7;color:#b45309}
+        .deadline-badge.normal{background:#f0fdf4;color:#16a34a}
+        .deadline-badge.passed{background:#f1f5f9;color:#94a3b8}
+        .app-card-actions{display:flex;gap:5px;margin-top:8px}
+        .btn-card-action{padding:4px 9px;border:1px solid var(--border);background:white;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text-sub);transition:all .2s}
+        .btn-card-action:hover{background:var(--bg);color:var(--navy)}
+        .btn-card-delete{color:#dc2626;border-color:#fecaca}
+        .btn-card-delete:hover{background:#fee2e2;border-color:#dc2626}
+        .empty-col{text-align:center;padding:30px 10px;color:var(--text-sub);font-size:12px;line-height:2}
+
+        /* ── 이력서 관리 탭 ── */
+        #resumeTab{display:none}
+        .resume-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .resume-section-title{font-size:16px;font-weight:700;color:var(--navy)}
+        .resume-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+        .resume-card{background:white;border:1px solid var(--border);border-radius:14px;padding:20px;transition:all .22s;cursor:pointer}
+        .resume-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(15,35,64,.1);border-color:#c4d8ea}
+        .resume-card-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px}
+        .resume-card-meta{font-size:12px;color:var(--text-sub);margin-bottom:12px}
+        .resume-card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+        .resume-tag{padding:3px 9px;background:#f0f4f8;border-radius:20px;font-size:11px;color:var(--text-sub);font-weight:600}
+        .resume-card-actions{display:flex;gap:8px}
+        .btn-resume{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;border:none}
+        .btn-resume-primary{background:var(--navy);color:white}
+        .btn-resume-secondary{background:#f0f4f8;color:var(--text)}
+        .btn-resume-danger{background:#fee2e2;color:#dc2626}
+        .resume-add-card{background:white;border:2px dashed var(--border);border-radius:14px;padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:all .22s;color:var(--text-sub)}
+        .resume-add-card:hover{border-color:var(--accent);color:var(--accent);background:#f0f7ff}
+        .resume-add-icon{font-size:2rem}
+
+        /* ── 공고 캘린더 위젯 ── */
+        .calendar-widget{background:white;border:1px solid var(--border);border-radius:16px;margin-top:32px;overflow:hidden}
+        .calendar-widget-header{background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+        .calendar-widget-title{color:white;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+        .calendar-widget-legend{display:flex;gap:14px;flex-wrap:wrap}
+        .cal-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+        .cal-legend-item{font-size:11px;color:rgba(255,255,255,.65);display:flex;align-items:center}
+        .calendar-widget-body{padding:20px}
+        #appCalendar .fc-toolbar-title{font-size:13px!important;font-weight:700!important;color:var(--navy)!important}
+        #appCalendar .fc-button{background:var(--navy)!important;border-color:var(--navy)!important;font-size:11px!important;padding:3px 9px!important;border-radius:7px!important;font-family:'Pretendard',sans-serif!important}
+        #appCalendar .fc-button:hover{background:var(--navy3)!important;border-color:var(--navy3)!important}
+        #appCalendar .fc-daygrid-event{border-radius:4px!important;font-size:10.5px!important;padding:1px 5px!important;border:none!important;font-weight:600!important}
+        #appCalendar .fc-day-today{background:#eff6ff!important}
+        #appCalendar .fc-col-header-cell-cushion{font-size:11px!important;color:var(--text-sub)!important;text-decoration:none!important;font-weight:600!important}
+        #appCalendar .fc-daygrid-day-number{font-size:11px!important;color:var(--text)!important;text-decoration:none!important}
+        #appCalendar .fc-scrollgrid{border-color:var(--border)!important}
+        #appCalendar .fc-scrollgrid td,#appCalendar .fc-scrollgrid th{border-color:var(--border)!important}
+
+        /* ── 모달 ── */
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .25s;padding:20px}
+        .modal-overlay.open{opacity:1;visibility:visible}
+        .modal{background:white;border-radius:16px;width:min(480px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);transform:translateY(20px);transition:transform .3s cubic-bezier(.34,1.3,.64,1)}
+        .modal-overlay.open .modal{transform:translateY(0)}
+        .modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .modal-title{font-size:16px;font-weight:700;color:var(--navy)}
+        .modal-close{width:28px;height:28px;border-radius:7px;background:#f0f4f8;border:none;cursor:pointer;font-size:16px;color:var(--text-sub);display:flex;align-items:center;justify-content:center}
+        .modal-body{padding:24px}
+        .form-group{margin-bottom:16px}
+        .form-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;display:block}
+        .form-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+        .form-input:focus{border-color:var(--accent)}
+        .form-select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;outline:none;background:white;cursor:pointer}
+        .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+        .btn-modal-cancel{padding:9px 18px;border:1px solid var(--border);background:white;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text)}
+        .btn-modal-save{padding:9px 18px;background:var(--navy);color:white;border:none;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+        .btn-modal-save:hover{background:var(--navy3)}
+
+        /* ── 이력서 에디터 모달 ── */
+        .resume-editor-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .25s;padding:20px}
+        .resume-editor-overlay.open{opacity:1;visibility:visible}
+        .resume-editor{background:white;border-radius:16px;width:min(640px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);transform:translateY(20px);transition:transform .3s cubic-bezier(.34,1.3,.64,1)}
+        .resume-editor-overlay.open .resume-editor{transform:translateY(0)}
+        .editor-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .editor-body{padding:24px;display:flex;flex-direction:column;gap:14px}
+        .editor-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+        textarea.form-input{resize:vertical;min-height:100px;line-height:1.6}
+
+        @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        @media(max-width:900px){.kanban-board{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:600px){header{padding:0 16px}main{padding:24px 16px 60px}.kanban-board{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        <div class="drawer-logo">JOBMATE</div>
+        <div class="drawer-user">
+            <div class="d-avatar" id="drawerAvatar">?</div>
+            <div><div class="d-name" id="drawerUserName">불러오는 중...</div><div class="d-sub">로그인됨</div></div>
+        </div>
+    </div>
+    <!-- NAV FOR APPLICATIONS -->
+    <nav class="drawer-nav">
+        <div class="drawer-section-label">메인 메뉴</div>
+        <a class="drawer-item" href="/dashboard"><div class="item-icon blue" style="background:#dbeafe"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div class="item-text"><div>대시보드</div><div class="item-desc">홈 화면으로 이동</div></div></a>
+        <a class="drawer-item" href="/jobs"><div class="item-icon green" style="background:#dcfce7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="item-text"><div>공고 매칭</div><div class="item-desc">맞춤 채용공고 확인</div></div></a>
+        <a class="drawer-item" href="/community"><div class="item-icon indigo" style="background:#e0e7ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="item-text"><div>커뮤니티</div><div class="item-desc">개발자들과 소통하기</div></div></a>
+        <a class="drawer-item" href="/interview"><div class="item-icon yellow" style="background:#fef3c7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="item-text"><div>면접 코칭</div><div class="item-desc">AI 면접 질문 &amp; 피드백</div></div></a>
+        <a class="drawer-item" href="/interview-notes"><div class="item-icon note" style="background:#f5f3ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div><div class="item-text"><div>면접 오답노트</div><div class="item-desc">면접 질문·피드백 복습</div></div></a>
+        <a class="drawer-item active" href="/applications"><div class="item-icon pink" style="background:#fce7f3"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#be185d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div><div class="item-text"><div>지원 현황</div><div class="item-desc">지원한 회사 관리</div></div></a>
+        <a class="drawer-item" href="/cover-letter"><div class="item-icon teal" style="background:#ccfbf1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="12" y1="9" x2="8" y2="9"/></svg></div><div class="item-text"><div>이력서 · 자소서 관리</div><div class="item-desc">AI 피드백으로 자소서를 개선하세요</div></div></a>
+        <a class="drawer-item" href="/profile-setup"><div class="item-icon purple" style="background:#f3e8ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div><div class="item-text"><div>맞춤 정보 설정</div><div class="item-desc">직무·기술스택·지역·연봉 설정</div></div></a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">설정</div>
+        <a class="drawer-item" href="/account"><div class="item-icon orange" style="background:#fff7ed"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="item-text"><div>계정 관리</div><div class="item-desc">비밀번호·개인정보 변경</div></div></a>
+    </nav>
+    <div class="drawer-footer">
+        <button class="btn-logout-drawer" onclick="logout()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            로그아웃
+        </button>
+    </div>
+</div>
+
+<header>
+    <a class="logo" href="/dashboard">JOBMATE</a>
+    <div class="header-right">
+        <div class="user-chip">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <span class="user-name" id="userName">불러오는 중...</span>
+        </div>
+        <div class="hamburger" id="hamburger" onclick="toggleDrawer()"><span></span><span></span><span></span></div>
+    </div>
+</header>
+
+<main>
+    <div class="page-header">
+        <div>
+            <div class="page-title">지원 현황</div>
+            <div class="page-sub">지원한 회사들의 진행 상황을 관리하세요</div>
+        </div>
+        <button class="btn-add" onclick="openAddModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            지원 추가
+        </button>
+    </div>
+
+    <!-- 탭 바 -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('kanban', this)">📋 지원 현황</button>
+        <button class="tab-btn" onclick="switchTab('resume', this)">📄 이력서 관리</button>
+    </div>
+
+    <!-- 칸반 탭 -->
+    <div id="kanbanTab">
+        <div class="kanban-board">
+            <div class="kanban-col" id="col-applied">
+                <div class="col-header">
+                    <span class="col-title">📨 서류지원</span>
+                    <span class="col-count" id="cnt-applied">0</span>
+                </div>
+                <div id="cards-applied"></div>
+            </div>
+            <div class="kanban-col" id="col-document-pass">
+                <div class="col-header">
+                    <span class="col-title">✅ 서류합격</span>
+                    <span class="col-count" style="background:#f59e0b" id="cnt-document-pass">0</span>
+                </div>
+                <div id="cards-document-pass"></div>
+            </div>
+            <div class="kanban-col" id="col-interview">
+                <div class="col-header">
+                    <span class="col-title">🗣 면접</span>
+                    <span class="col-count" style="background:#8b5cf6" id="cnt-interview">0</span>
+                </div>
+                <div id="cards-interview"></div>
+            </div>
+            <div class="kanban-col" id="col-final-pass">
+                <div class="col-header">
+                    <span class="col-title">🎉 최종합격</span>
+                    <span class="col-count" style="background:#16a34a" id="cnt-final-pass">0</span>
+                </div>
+                <div id="cards-final-pass"></div>
+            </div>
+            <div class="kanban-col" id="col-fail">
+                <div class="col-header">
+                    <span class="col-title">❌ 불합격</span>
+                    <span class="col-count" style="background:#ef4444" id="cnt-fail">0</span>
+                </div>
+                <div id="cards-fail"></div>
+            </div>
+        </div>
+
+    <!-- 이력서 관리 탭 -->
+    <div id="resumeTab">
+        <div class="resume-section-header">
+            <div class="resume-section-title">내 이력서 목록</div>
+            <button class="btn-add" onclick="openResumeEditor()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                새 이력서
+            </button>
+        </div>
+        <div class="resume-grid" id="resumeGrid">
+            <div class="resume-add-card" onclick="openResumeEditor()">
+                <div class="resume-add-icon">📄</div>
+                <div style="font-size:14px;font-weight:700">새 이력서 추가</div>
+                <div style="font-size:12px">클릭해서 이력서를 작성하세요</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 지원 추가 모달 -->
+<div class="modal-overlay" id="addModal" onclick="onModalOverlayClick(event,'addModal')">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">지원 추가</div>
+            <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">회사명 *</label>
+                <input class="form-input" id="addCompany" placeholder="예: 카카오" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">직무명</label>
+                <input class="form-input" id="addJobTitle" placeholder="예: 백엔드 개발자" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">지원일</label>
+                <input class="form-input" type="date" id="addDate" />
+            </div>
+            <!-- ✅ 마감일 직접 입력 (사람인 API 전까지 수동 입력) -->
+            <div class="form-group">
+                <label class="form-label">마감일 <span style="color:var(--text-sub);font-weight:400">(선택)</span></label>
+                <input class="form-input" type="date" id="addDeadline" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">메모</label>
+                <input class="form-input" id="addMemo" placeholder="특이사항 메모" />
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-cancel" onclick="closeModal('addModal')">취소</button>
+            <button class="btn-modal-save" onclick="submitAdd()">추가하기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 상태 변경 모달 -->
+<div class="modal-overlay" id="statusModal" onclick="onModalOverlayClick(event,'statusModal')">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title" id="statusModalTitle">상태 변경</div>
+            <button class="modal-close" onclick="closeModal('statusModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">진행 상태 변경</label>
+                <select class="form-select" id="statusSelect">
+                    <option value="APPLIED">📨 서류지원</option>
+                    <option value="DOCUMENT_PASS">✅ 서류합격</option>
+                    <option value="INTERVIEW">🗣 면접</option>
+                    <option value="FINAL_PASS">🎉 최종합격</option>
+                    <option value="FAIL">❌ 불합격</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-cancel" onclick="closeModal('statusModal')">취소</button>
+            <button class="btn-modal-save" onclick="submitStatus()">변경하기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 이력서 에디터 모달 -->
+<div class="resume-editor-overlay" id="resumeEditorOverlay" onclick="onResumeEditorOverlayClick(event)">
+    <div class="resume-editor">
+        <div class="editor-header">
+            <div class="modal-title" id="resumeEditorTitle">새 이력서 작성</div>
+            <button class="modal-close" onclick="closeResumeEditor()">✕</button>
+        </div>
+        <div class="editor-body">
+            <input type="hidden" id="resumeEditId" value="" />
+            <div class="form-group">
+                <label class="form-label">이력서 제목 *</label>
+                <input class="form-input" id="resumeTitle" placeholder="예: 백엔드 개발자 이력서 v1" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">기술 스택</label>
+                <input class="form-input" id="resumeStacks" placeholder="예: Java, Spring Boot, MySQL, React" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">자기소개</label>
+                <textarea class="form-input" id="resumeIntro" placeholder="간략한 자기소개를 작성하세요..." style="min-height:80px"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">경력 사항</label>
+                <textarea class="form-input" id="resumeCareer" placeholder="경력 사항을 작성하세요 (신입이면 비워두세요)..." style="min-height:80px"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">프로젝트</label>
+                <textarea class="form-input" id="resumeProjects" placeholder="주요 프로젝트를 작성하세요..." style="min-height:100px"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">학력</label>
+                <input class="form-input" id="resumeEducation" placeholder="예: OO대학교 컴퓨터공학과 졸업 (2024)" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">자격증 / 어학</label>
+                <input class="form-input" id="resumeCerts" placeholder="예: 정보처리기사, OPIC IH" />
+            </div>
+        </div>
+        <div class="editor-footer">
+            <button class="btn-modal-cancel" onclick="closeResumeEditor()">취소</button>
+            <button class="btn-modal-save" onclick="saveResume()">저장</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ── 드로어 ─────────────────────────────────────── */
+    function toggleDrawer(){ document.getElementById('drawer').classList.contains('open')?closeDrawer():openDrawer(); }
+    function openDrawer(){ document.getElementById('drawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); document.getElementById('hamburger').classList.add('open'); document.body.style.overflow='hidden'; }
+    function closeDrawer(){ document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); document.getElementById('hamburger').classList.remove('open'); document.body.style.overflow=''; }
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeDrawer(); closeModal('addModal'); closeModal('statusModal'); closeResumeEditor(); } });
+
+    /* ── 탭 전환 ─────────────────────────────────────── */
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('kanbanTab').style.display = tab === 'kanban' ? 'block' : 'none';
+        document.getElementById('resumeTab').style.display = tab === 'resume' ? 'block' : 'none';
+        if (tab === 'kanban' && !calendarRendered) {
+            setTimeout(() => renderCalendar(cachedApps), 100);
+        }
+    }
+
+    /* ── 상수 ────────────────────────────────────────── */
+    const STATUS_MAP = {
+        'APPLIED':       { label:'서류지원', col:'applied' },
+        'DOCUMENT_PASS': { label:'서류합격', col:'document-pass' },
+        'INTERVIEW':     { label:'면접',     col:'interview' },
+        'FINAL_PASS':    { label:'최종합격', col:'final-pass' },
+        'FAIL':          { label:'불합격',   col:'fail' }
+    };
+
+    /* ── D-day 계산 ──────────────────────────────────── */
+    function calcDday(deadlineStr) {
+        if (!deadlineStr) return null;
+        const today = new Date(); today.setHours(0,0,0,0);
+        const dl = new Date(deadlineStr); dl.setHours(0,0,0,0);
+        return Math.floor((dl - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function deadlineBadgeHtml(deadlineStr) {
+        if (!deadlineStr) return '';
+        const d = calcDday(deadlineStr);
+        if (d === null) return '';
+        if (d < 0)  return `<span class="deadline-badge passed">마감 (${Math.abs(d)}일 전)</span>`;
+        if (d === 0) return `<span class="deadline-badge urgent">🔥 오늘 마감</span>`;
+        if (d <= 3) return `<span class="deadline-badge urgent">🔴 D-${d} 마감임박</span>`;
+        if (d <= 7) return `<span class="deadline-badge soon">🟡 D-${d}</span>`;
+        return `<span class="deadline-badge normal">D-${d}</span>`;
+    }
+
+    /* ── 칸반 ────────────────────────────────────────── */
+    let allApps = [];
+    let calendarRendered = false;
+    let calInstance = null;
+    let cachedApps = [];
+    let editingAppId = null;
+
+    async function loadApplications() {
+        try {
+            const res = await fetch('/api/applications');
+            if (!res.ok) return;
+            allApps = await res.json();
+            cachedApps = allApps;
+            renderKanban(allApps);
+            renderCalendar(allApps);
+        } catch(e) { console.error(e); }
+    }
+
+    function renderKanban(apps) {
+        Object.keys(STATUS_MAP).forEach(status => {
+            const col = STATUS_MAP[status].col;
+            const container = document.getElementById('cards-' + col);
+            const cnt = document.getElementById('cnt-' + col);
+            const filtered = apps.filter(a => a.status === status);
+            cnt.textContent = filtered.length;
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-col">아직 없어요</div>';
+                return;
+            }
+            container.innerHTML = filtered.map(a => `
+                <div class="app-card">
+                    <div class="app-card-company">${a.companyName || ''}</div>
+                    <div class="app-card-job">${a.jobTitle || ''}</div>
+                    <div class="app-card-date">${a.appliedDate ? '지원일: ' + a.appliedDate : ''}</div>
+                    ${deadlineBadgeHtml(a.deadline)}
+                    ${a.memo ? `<div class="app-card-date" style="margin-top:4px;font-style:italic">${a.memo}</div>` : ''}
+                    <div class="app-card-actions">
+                        <button class="btn-card-action" onclick="openStatusModal(${a.id},'${a.status}','${(a.companyName||'').replace(/'/g,"\\'")}')">상태 변경</button>
+                        <button class="btn-card-action btn-card-delete" onclick="deleteApp(${a.id})">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        });
+    }
+
+    /* ── 캘린더 ──────────────────────────────────────── */
+    function renderCalendar(apps) {
+        const el = document.getElementById('appCalendar');
+        if (!el) return;
+
+        const events = [];
+
+        apps.forEach(a => {
+            // 지원일 이벤트 (서류지원, 최종합격만)
+            if ((a.status === 'APPLIED' || a.status === 'FINAL_PASS') && a.appliedDate) {
+                events.push({
+                    title: (a.status === 'FINAL_PASS' ? '🎉 ' : '📨 ') + a.companyName,
+                    start: a.appliedDate,
+                    backgroundColor: a.status === 'FINAL_PASS' ? '#16a34a' : '#3b82f6',
+                    borderColor: 'transparent',
+                    extendedProps: { type: 'applied', appId: a.id }
+                });
+            }
+
+            // ✅ 마감일 이벤트 (deadline 있는 것 전부)
+            if (a.deadline) {
+                const d = calcDday(a.deadline);
+                let color = '#94a3b8'; // 기본 회색 (지났거나 여유)
+                if (d !== null) {
+                    if (d >= 0 && d <= 3) color = '#ef4444';      // 3일 이내 빨강
+                    else if (d > 3 && d <= 7) color = '#f59e0b';  // 7일 이내 주황
+                    else if (d > 7) color = '#6366f1';             // 여유 보라
+                }
+                events.push({
+                    title: '⏰ ' + a.companyName + ' 마감',
+                    start: a.deadline,
+                    backgroundColor: color,
+                    borderColor: 'transparent',
+                    extendedProps: { type: 'deadline', appId: a.id }
+                });
+            }
+        });
+
+        if (calInstance) { calInstance.destroy(); calInstance = null; }
+        calInstance = new FullCalendar.Calendar(el, {
+            initialView: 'dayGridMonth',
+            locale: 'ko',
+            headerToolbar: { left:'prev,next today', center:'title', right:'' },
+            events: events,
+            height: 420,
+            eventClick: function(info) {
+                // 클릭 시 해당 카드로 스크롤 (칸반에서 찾기)
+                const appId = info.event.extendedProps.appId;
+                const card = document.querySelector(`[data-app-id="${appId}"]`);
+                if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            },
+            eventDidMount: function(info) {
+                // 툴팁
+                const app = allApps.find(a => a.id === info.event.extendedProps.appId);
+                if (app) info.el.title = `${app.companyName} | ${app.jobTitle || ''} | ${STATUS_MAP[app.status]?.label || ''}`;
+            }
+        });
+        calInstance.render();
+        calendarRendered = true;
+    }
+
+    /* ── 지원 추가 ───────────────────────────────────── */
+    function openAddModal() {
+        document.getElementById('addCompany').value = '';
+        document.getElementById('addJobTitle').value = '';
+        document.getElementById('addDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('addDeadline').value = '';
+        document.getElementById('addMemo').value = '';
+        document.getElementById('addModal').classList.add('open');
+    }
+
+    async function submitAdd() {
+        const company = document.getElementById('addCompany').value.trim();
+        if (!company) { alert('회사명을 입력해주세요.'); return; }
+        const body = {
+            companyName: company,
+            jobTitle: document.getElementById('addJobTitle').value.trim(),
+            appliedDate: document.getElementById('addDate').value,
+            deadline: document.getElementById('addDeadline').value || null,  // ✅ 마감일
+            status: 'APPLIED',
+            memo: document.getElementById('addMemo').value.trim()
+        };
+        try {
+            const res = await fetch('/api/applications', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify(body)
+            });
+            if (res.ok) { closeModal('addModal'); loadApplications(); }
+            else alert('추가 실패');
+        } catch(e) { alert('오류: ' + e.message); }
+    }
+
+    /* ── 상태 변경 ───────────────────────────────────── */
+    function openStatusModal(id, currentStatus, company) {
+        editingAppId = id;
+        document.getElementById('statusModalTitle').textContent = company + ' 상태 변경';
+        document.getElementById('statusSelect').value = currentStatus;
+        document.getElementById('statusModal').classList.add('open');
+    }
+
+    async function submitStatus() {
+        const status = document.getElementById('statusSelect').value;
+        try {
+            const res = await fetch(`/api/applications/${editingAppId}/status`, {
+                method:'PATCH',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({ status })
+            });
+            if (res.ok) { closeModal('statusModal'); loadApplications(); }
+            else alert('변경 실패');
+        } catch(e) { alert('오류: ' + e.message); }
+    }
+
+    /* ── 삭제 ────────────────────────────────────────── */
+    async function deleteApp(id) {
+        if (!confirm('삭제하시겠습니까?')) return;
+        try {
+            const res = await fetch(`/api/applications/${id}`, { method:'DELETE' });
+            if (res.ok) loadApplications();
+            else alert('삭제 실패');
+        } catch(e) { alert('오류: ' + e.message); }
+    }
+
+    /* ── 모달 유틸 ───────────────────────────────────── */
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function onModalOverlayClick(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+    /* ── 이력서 관리 ─────────────────────────────────── */
+    let resumes = JSON.parse(localStorage.getItem('jm_resumes') || '[]');
+
+    function renderResumes() {
+        const grid = document.getElementById('resumeGrid');
+        const addCard = `<div class="resume-add-card" onclick="openResumeEditor()"><div class="resume-add-icon">📄</div><div style="font-size:14px;font-weight:700">새 이력서 추가</div><div style="font-size:12px">클릭해서 이력서를 작성하세요</div></div>`;
+        if (resumes.length === 0) { grid.innerHTML = addCard; return; }
+        grid.innerHTML = resumes.map(r => `
+            <div class="resume-card">
+                <div class="resume-card-title">${r.title}</div>
+                <div class="resume-card-meta">마지막 수정: ${r.updatedAt || r.createdAt}</div>
+                <div class="resume-card-tags">
+                    ${(r.stacks || '').split(',').filter(s=>s.trim()).map(s=>`<span class="resume-tag">${s.trim()}</span>`).join('')}
+                </div>
+                <div class="resume-card-actions">
+                    <button class="btn-resume btn-resume-primary" onclick="openResumeEditor('${r.id}')">수정</button>
+                    <button class="btn-resume btn-resume-secondary" onclick="printResume('${r.id}')">미리보기</button>
+                    <button class="btn-resume btn-resume-danger" onclick="deleteResume('${r.id}')">삭제</button>
+                </div>
+            </div>
+        `).join('') + addCard;
+    }
+
+    function openResumeEditor(id) {
+        document.getElementById('resumeEditId').value = id || '';
+        if (id) {
+            const r = resumes.find(r => r.id === id);
+            if (!r) return;
+            document.getElementById('resumeEditorTitle').textContent = '이력서 수정';
+            document.getElementById('resumeTitle').value = r.title || '';
+            document.getElementById('resumeStacks').value = r.stacks || '';
+            document.getElementById('resumeIntro').value = r.intro || '';
+            document.getElementById('resumeCareer').value = r.career || '';
+            document.getElementById('resumeProjects').value = r.projects || '';
+            document.getElementById('resumeEducation').value = r.education || '';
+            document.getElementById('resumeCerts').value = r.certs || '';
+        } else {
+            document.getElementById('resumeEditorTitle').textContent = '새 이력서 작성';
+            ['resumeTitle','resumeStacks','resumeIntro','resumeCareer','resumeProjects','resumeEducation','resumeCerts'].forEach(id => document.getElementById(id).value = '');
+        }
+        document.getElementById('resumeEditorOverlay').classList.add('open');
+    }
+
+    function closeResumeEditor() { document.getElementById('resumeEditorOverlay').classList.remove('open'); }
+    function onResumeEditorOverlayClick(e) { if (e.target === document.getElementById('resumeEditorOverlay')) closeResumeEditor(); }
+
+    function saveResume() {
+        const title = document.getElementById('resumeTitle').value.trim();
+        if (!title) { alert('이력서 제목을 입력해주세요.'); return; }
+        const editId = document.getElementById('resumeEditId').value;
+        const now = new Date().toLocaleDateString('ko-KR');
+        const data = {
+            id: editId || Date.now().toString(),
+            title,
+            stacks: document.getElementById('resumeStacks').value.trim(),
+            intro: document.getElementById('resumeIntro').value.trim(),
+            career: document.getElementById('resumeCareer').value.trim(),
+            projects: document.getElementById('resumeProjects').value.trim(),
+            education: document.getElementById('resumeEducation').value.trim(),
+            certs: document.getElementById('resumeCerts').value.trim(),
+            updatedAt: now,
+            createdAt: editId ? (resumes.find(r=>r.id===editId)||{}).createdAt || now : now
+        };
+        if (editId) {
+            const idx = resumes.findIndex(r => r.id === editId);
+            if (idx !== -1) resumes[idx] = data;
+        } else {
+            resumes.unshift(data);
+        }
+        localStorage.setItem('jm_resumes', JSON.stringify(resumes));
+        closeResumeEditor();
+        renderResumes();
+    }
+
+    function deleteResume(id) {
+        if (!confirm('이력서를 삭제하시겠습니까?')) return;
+        resumes = resumes.filter(r => r.id !== id);
+        localStorage.setItem('jm_resumes', JSON.stringify(resumes));
+        renderResumes();
+    }
+
+    function printResume(id) {
+        const r = resumes.find(r => r.id === id);
+        if (!r) return;
+        const win = window.open('', '_blank');
+        win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${r.title}</title>
+        <style>body{font-family:'Noto Sans KR',sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a2a3a}
+        h1{font-size:22px;border-bottom:2px solid #0f2340;padding-bottom:10px;margin-bottom:20px}
+        h2{font-size:15px;color:#0f2340;margin:20px 0 8px;border-left:3px solid #3b82f6;padding-left:10px}
+        p{line-height:1.7;font-size:13.5px;white-space:pre-wrap}
+        .tags{display:flex;flex-wrap:wrap;gap:6px}.tag{background:#f0f4f8;padding:3px 10px;border-radius:20px;font-size:12px}
+        @media print{body{margin:20px}}</style></head><body>
+        <h1>${r.title}</h1>
+        ${r.intro ? `<h2>자기소개</h2><p>${r.intro}</p>` : ''}
+        ${r.stacks ? `<h2>기술 스택</h2><div class="tags">${r.stacks.split(',').map(s=>`<span class="tag">${s.trim()}</span>`).join('')}</div>` : ''}
+        ${r.career ? `<h2>경력 사항</h2><p>${r.career}</p>` : ''}
+        ${r.projects ? `<h2>프로젝트</h2><p>${r.projects}</p>` : ''}
+        ${r.education ? `<h2>학력</h2><p>${r.education}</p>` : ''}
+        ${r.certs ? `<h2>자격증 / 어학</h2><p>${r.certs}</p>` : ''}
+        </body></html>`);
+        win.document.close();
+        setTimeout(() => win.print(), 500);
+    }
+
+    /* ── 로그아웃 ─────────────────────────────────────── */
+    async function logout() { await fetch('/api/members/logout', { method:'POST' }); location.href = '/'; }
+
+    /* ── 초기화 ──────────────────────────────────────── */
+    fetch('/api/members/me')
+        .then(res => { if (!res.ok) { location.href = '/'; return null; } return res.json(); })
+        .then(data => {
+            if (!data) return;
+            const name = data.name || data.email || '사용자';
+            document.getElementById('userName').textContent = name + '님';
+            document.getElementById('userAvatar').textContent = name.charAt(0);
+            document.getElementById('drawerUserName').textContent = name + '님';
+            document.getElementById('drawerAvatar').textContent = name.charAt(0);
+        })
+        .then(() => { loadApplications(); renderResumes(); })
+        .catch(() => location.href = '/');
+</script>
+</body>
+</html>

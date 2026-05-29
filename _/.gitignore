@@ -1,0 +1,91 @@
+HELP.md
+
+### Environment files ###
+.env
+.env.*
+!.env.example
+
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### Logs ###
+*.log
+logs/
+nohup.out
+
+### OS generated files ###
+.DS_Store
+Thumbs.db
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Java ###
+*.class
+
+### Archive / package files ###
+*.zip
+*.tar
+*.gz
+*.rar
+
+### Temporary files ###
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+### Application generated files ###
+uploads/
+temp/
+tmp/
+
+### Test / reports ###
+/reports/
+/test-results/
+/coverage/
+
+### Local database / local-only files ###
+*.h2.db
+*.mv.db
+*.sqlite
+*.sqlite3
+
+### Secrets / key files ###
+*.pem
+*.key
+*.p12
+*.jks

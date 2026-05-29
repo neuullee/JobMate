@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 면접 오답노트</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:#0f2340; --navy2:#162d4a; --navy3:#1e3a5f;
+            --accent:#3b82f6; --accent2:#60a5fa;
+            --bg:#f0f4f8; --surface:#ffffff;
+            --border:#dce8f0; --text:#1a2a3a; --text-sub:#6b7f96;
+            --green:#16a34a; --yellow:#b45309; --purple:#7c3aed;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Pretendard','Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh}
+
+        /* ── 헤더 ── */
+        header{background:var(--navy);padding:0 48px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 1px 0 rgba(255,255,255,.06)}
+        .logo{color:white;font-size:1.15rem;font-weight:900;letter-spacing:5px;text-decoration:none}
+        .header-right{display:flex;align-items:center;gap:10px}
+        .user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:4px 14px 4px 5px}
+        .user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white}
+        .user-name{color:rgba(255,255,255,.8);font-size:13px;font-weight:500}
+        .hamburger{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+        .hamburger span{display:block;width:16px;height:1.5px;background:rgba(255,255,255,.8);border-radius:2px;transition:all .3s}
+        .hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+        .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+        .hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+
+        /* ── 드로어 ── */
+        .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;opacity:0;visibility:hidden;transition:all .3s}
+        .drawer-overlay.open{opacity:1;visibility:visible}
+        .drawer{position:fixed;top:0;right:-300px;width:280px;height:100vh;background:white;z-index:400;display:flex;flex-direction:column;transition:right .32s cubic-bezier(.34,1.56,.64,1);box-shadow:-6px 0 32px rgba(0,0,0,.12)}
+        .drawer.open{right:0}
+        .drawer-header{background:var(--navy);padding:22px 20px 18px;position:relative;flex-shrink:0}
+        .drawer-logo{color:white;font-size:.95rem;font-weight:900;letter-spacing:4px;margin-bottom:14px}
+        .drawer-user{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border-radius:10px;padding:10px 13px}
+        .d-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0}
+        .d-name{color:white;font-size:13.5px;font-weight:700}
+        .d-sub{color:rgba(255,255,255,.45);font-size:11px;margin-top:1px}
+        .drawer-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.1);border:none;color:white;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .drawer-nav{flex:1;padding:10px;overflow-y:auto}
+        .drawer-section-label{font-size:10px;font-weight:700;color:var(--text-sub);letter-spacing:2px;text-transform:uppercase;padding:10px 12px 5px}
+        .drawer-item{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--text);cursor:pointer;text-decoration:none;transition:all .18s;margin-bottom:2px}
+        .drawer-item:hover{background:#f0f4f8;color:var(--navy)}
+        .drawer-item.active{background:#eef4ff;color:var(--navy)}
+        .item-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .item-icon svg{width:17px;height:17px}
+        .item-icon.blue{background:#dbeafe}
+        .item-icon.green{background:#dcfce7}
+        .item-icon.yellow{background:#fef3c7}
+        .item-icon.purple{background:#f3e8ff}
+        .item-icon.pink{background:#fce7f3}
+        .item-icon.indigo{background:#e0e7ff}
+        .item-icon.teal{background:#ccfbf1}
+        .item-icon.note{background:#fdf4ff}
+        .item-text{flex:1}
+        .item-desc{font-size:11px;color:var(--text-sub);font-weight:400;margin-top:1px}
+        .drawer-divider{height:1px;background:var(--border);margin:7px 12px}
+        .drawer-footer{padding:14px 10px;border-top:1px solid var(--border);flex-shrink:0}
+        .btn-logout-drawer{width:100%;padding:11px;border-radius:10px;background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+        .btn-logout-drawer:hover{background:#fecaca}
+
+        main{max-width:1200px;margin:0 auto;padding:36px 28px 80px;display:flex;flex-direction:column;gap:24px}
+
+        .page-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+        .page-badge{display:inline-flex;align-items:center;gap:6px;background:#fef3c7;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#b45309;margin-bottom:10px}
+        .page-title{font-size:1.7rem;font-weight:900;color:var(--navy)}
+        .page-sub{font-size:13.5px;color:var(--text-sub);margin-top:6px}
+        .page-stats{display:flex;gap:12px}
+        .stat-pill{background:white;border:1px solid var(--border);border-radius:12px;padding:10px 18px;text-align:center}
+        .stat-pill-num{font-size:1.4rem;font-weight:800;color:var(--navy)}
+        .stat-pill-label{font-size:11px;color:var(--text-sub);margin-top:2px}
+
+        .filter-bar{background:white;border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+        .search-wrap{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:8px 12px}
+        .search-input{border:none;background:transparent;font-size:13.5px;font-family:inherit;outline:none;width:100%;color:var(--text)}
+        .search-input::placeholder{color:var(--text-sub)}
+        .filter-chips{display:flex;gap:8px;flex-wrap:wrap}
+        .chip{padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:600;border:1.5px solid var(--border);background:white;color:var(--text-sub);cursor:pointer;transition:all .18s}
+        .chip.active{background:var(--navy);color:white;border-color:var(--navy)}
+        .chip:hover:not(.active){background:#f0f4f8}
+
+        .content-area{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
+
+        .left-column{display:flex;flex-direction:column;gap:0;position:sticky;top:82px}
+
+        .list-panel{background:white;border:1px solid var(--border);border-radius:16px 16px 0 0;overflow:hidden;border-bottom:none}
+        .list-panel-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .list-panel-title{font-size:14px;font-weight:700;color:var(--navy)}
+        .list-count{font-size:12px;color:var(--text-sub)}
+        .note-list{overflow-y:auto;max-height:calc(100vh - 480px);min-height:120px}
+        .note-item{padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;position:relative}
+        .note-item:last-child{border-bottom:none}
+        .note-item:hover{background:#f8fafc}
+        .note-item.active{background:#eef4ff;border-left:3px solid var(--accent)}
+        .note-item-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+        .note-job-tag{display:inline-flex;padding:2px 8px;background:#fef3c7;border-radius:20px;font-size:10.5px;font-weight:700;color:#b45309;flex-shrink:0}
+        .note-memo-badge{display:inline-flex;padding:2px 8px;background:#dcfce7;border-radius:20px;font-size:10.5px;font-weight:700;color:#16a34a}
+        .note-item-q{font-size:13px;font-weight:600;color:var(--text);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
+        .note-item-date{font-size:11px;color:var(--text-sub)}
+        .note-empty{padding:50px 20px;text-align:center;color:var(--text-sub);font-size:13px;line-height:2.2}
+        .note-empty-icon{font-size:2.5rem;margin-bottom:10px}
+
+        .ai-btn-wrap{background:white;border:1px solid var(--border);border-top:none;padding:12px;border-radius:0}
+        .btn-ai-open{width:100%;padding:11px 16px;background:linear-gradient(135deg,#312e81,#4f46e5);color:white;border:none;border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:0 3px 12px rgba(79,70,229,.3)}
+        .btn-ai-open:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(79,70,229,.4)}
+        .btn-ai-open.active{background:linear-gradient(135deg,#581c87,#7c3aed);box-shadow:0 3px 12px rgba(124,58,237,.35)}
+
+        .chat-inline{background:white;border:1px solid var(--border);border-top:none;border-radius:0 0 16px 16px;overflow:hidden;display:none;flex-direction:column}
+        .chat-inline.open{display:flex}
+        .chat-inline-header{padding:12px 16px;background:linear-gradient(135deg,#1e1b4b,#4f46e5);display:flex;align-items:center;gap:8px}
+        .chat-inline-dot{width:8px;height:8px;border-radius:50%;background:#a5f3fc;animation:pulse 1.5s ease-in-out infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+        .chat-inline-label{color:white;font-size:13px;font-weight:700;flex:1}
+        .chat-context-mini{padding:8px 14px;background:#f0f4f8;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--text-sub);line-height:1.5}
+        .chat-context-mini strong{color:var(--navy)}
+        .chat-messages{flex:1;padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;max-height:260px;min-height:120px}
+        .chat-empty-inline{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;color:var(--text-sub);font-size:12.5px;text-align:center;line-height:2}
+        .chat-empty-inline-icon{font-size:1.8rem;margin-bottom:6px;opacity:.5}
+        .chat-suggest{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;justify-content:center}
+        .chat-suggest-btn{padding:5px 10px;background:#f0f4f8;border:1.5px solid var(--border);border-radius:16px;font-size:11.5px;font-weight:600;color:var(--navy);cursor:pointer;transition:all .18s;font-family:inherit}
+        .chat-suggest-btn:hover{background:#e0e7ff;border-color:#6366f1;color:#4f46e5}
+        .msg-bubble{padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.75;max-width:90%;white-space:pre-wrap;word-break:break-word}
+        .msg-user{background:linear-gradient(135deg,#4f46e5,#6366f1);color:white;align-self:flex-end;border-bottom-right-radius:3px}
+        .msg-ai{background:#f8fafc;border:1px solid var(--border);color:var(--text);align-self:flex-start;border-bottom-left-radius:3px}
+        .msg-ai.loading{color:var(--text-sub);font-style:italic}
+        .chat-input-wrap{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+        .chat-input{flex:1;background:#f8fafc;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;color:var(--text);outline:none;resize:none;min-height:38px;max-height:90px;line-height:1.5;transition:border-color .2s}
+        .chat-input:focus{border-color:var(--accent);background:white}
+        .chat-input::placeholder{color:var(--text-sub)}
+        .btn-send{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#4f46e5,#6366f1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;box-shadow:0 2px 6px rgba(79,70,229,.3)}
+        .btn-send:hover{transform:scale(1.08)}
+        .btn-send:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+        .detail-panel{background:white;border:1px solid var(--border);border-radius:16px;overflow:hidden}
+        .detail-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:480px;color:var(--text-sub);font-size:13.5px;text-align:center;line-height:2.2;padding:40px}
+        .detail-placeholder-icon{font-size:3rem;margin-bottom:14px;opacity:.5}
+        .detail-header{background:linear-gradient(135deg,var(--navy),var(--navy3));padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+        .detail-job-tag{display:inline-flex;padding:3px 10px;background:rgba(255,255,255,.15);border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:10px}
+        .detail-question{font-size:16px;font-weight:700;color:white;line-height:1.6}
+        .detail-date{font-size:11px;color:rgba(255,255,255,.5);margin-top:8px}
+        .btn-delete-detail{padding:7px 14px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);border-radius:8px;color:#fca5a5;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+        .btn-delete-detail:hover{background:rgba(239,68,68,.35)}
+        .detail-body{padding:24px;display:flex;flex-direction:column;gap:20px}
+        .section-label{font-size:11px;font-weight:700;color:var(--text-sub);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+        .section-label::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--accent);display:inline-block}
+        .answer-box{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:16px;font-size:13.5px;line-height:1.8;color:var(--text);white-space:pre-wrap}
+        .feedback-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;font-size:13.5px;line-height:1.8;color:var(--text);white-space:pre-wrap}
+        .memo-section{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px}
+        .memo-section .section-label::before{background:#f59e0b}
+        .memo-textarea{width:100%;border:1.5px solid #fde68a;background:white;border-radius:9px;padding:12px 14px;font-size:13.5px;font-family:inherit;resize:vertical;min-height:90px;line-height:1.7;outline:none;color:var(--text)}
+        .memo-textarea:focus{border-color:#f59e0b}
+        .memo-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+        .memo-hint{font-size:11.5px;color:var(--text-sub)}
+        .btn-save-memo{padding:8px 20px;background:var(--navy);color:white;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+        .btn-save-memo:hover{background:var(--navy3)}
+
+        .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:white;padding:11px 22px;border-radius:12px;font-size:13.5px;font-weight:600;z-index:9000;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+        .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+        .toast.success{background:#16a34a}
+        .toast.error{background:#dc2626}
+
+        @media(max-width:900px){.content-area{grid-template-columns:1fr}.left-column{position:static}.note-list{max-height:280px}}
+        @media(max-width:600px){header{padding:0 16px}main{padding:20px 16px 60px}.page-stats{display:none}.user-chip{display:none}}
+    </style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- 드로어 오버레이 -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- 드로어 -->
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        <div class="drawer-logo">JOBMATE</div>
+        <div class="drawer-user">
+            <div class="d-avatar" id="drawerAvatar">?</div>
+            <div>
+                <div class="d-name" id="drawerUserName">불러오는 중...</div>
+                <div class="d-sub">로그인됨</div>
+            </div>
+        </div>
+    </div>
+    <!-- NAV FOR INTERVIEW-NOTES -->
+    <nav class="drawer-nav">
+        <div class="drawer-section-label">메인 메뉴</div>
+        <a class="drawer-item" href="/dashboard"><div class="item-icon blue" style="background:#dbeafe"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div class="item-text"><div>대시보드</div><div class="item-desc">홈 화면으로 이동</div></div></a>
+        <a class="drawer-item" href="/jobs"><div class="item-icon green" style="background:#dcfce7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="item-text"><div>공고 매칭</div><div class="item-desc">맞춤 채용공고 확인</div></div></a>
+        <a class="drawer-item" href="/community"><div class="item-icon indigo" style="background:#e0e7ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="item-text"><div>커뮤니티</div><div class="item-desc">개발자들과 소통하기</div></div></a>
+        <a class="drawer-item" href="/interview"><div class="item-icon yellow" style="background:#fef3c7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="item-text"><div>면접 코칭</div><div class="item-desc">AI 면접 질문 &amp; 피드백</div></div></a>
+        <a class="drawer-item active" href="/interview-notes"><div class="item-icon note" style="background:#f5f3ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div><div class="item-text"><div>면접 오답노트</div><div class="item-desc">면접 질문·피드백 복습</div></div></a>
+        <a class="drawer-item" href="/cover-letter"><div class="item-icon teal" style="background:#ccfbf1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="12" y1="9" x2="8" y2="9"/></svg></div><div class="item-text"><div>이력서 · 자소서 관리</div><div class="item-desc">AI 피드백으로 자소서를 개선하세요</div></div></a>
+        <a class="drawer-item" href="/account">
+            <div class="item-icon purple" style="background:#f3e8ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div><div class="item-text"><div>맞춤 정보 설정</div><div class="item-desc">직무·기술스택·지역·연봉 설정</div></div></a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">설정</div>
+        <a class="drawer-item" href="/account"><div class="item-icon orange" style="background:#fff7ed"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="item-text"><div>계정 관리</div><div class="item-desc">비밀번호·개인정보 변경</div></div></a>
+    </nav>
+    <div class="drawer-footer">
+        <button class="btn-logout-drawer" onclick="logout()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            로그아웃
+        </button>
+    </div>
+</div>
+
+<header>
+    <a class="logo" href="/dashboard">JOBMATE</a>
+    <div class="header-right">
+        <div class="user-chip">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <span class="user-name" id="userName">불러오는 중...</span>
+        </div>
+        <div class="hamburger" id="hamburger" onclick="toggleDrawer()">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="page-header">
+        <div>
+            <div class="page-badge">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                면접 오답노트
+            </div>
+            <div class="page-title">내 면접 오답노트</div>
+            <div class="page-sub">AI 면접 코칭에서 연습한 질문들을 복습하고 나만의 메모를 작성하세요</div>
+        </div>
+        <div class="page-stats">
+            <div class="stat-pill"><div class="stat-pill-num" id="totalCount">0</div><div class="stat-pill-label">전체 질문</div></div>
+            <div class="stat-pill"><div class="stat-pill-num" id="memoCount">0</div><div class="stat-pill-label">메모 작성</div></div>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <div class="search-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7f96" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="search-input" id="searchInput" type="text" placeholder="질문 내용으로 검색..." oninput="filterNotes()">
+        </div>
+        <div class="filter-chips" id="filterChips">
+            <div class="chip active" onclick="setFilter('all', this)">전체</div>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- 왼쪽: 목록 + AI 버튼 + 인라인 채팅 -->
+        <div class="left-column">
+            <div class="list-panel">
+                <div class="list-panel-header">
+                    <span class="list-panel-title">저장된 질문</span>
+                    <span class="list-count" id="listCount">0개</span>
+                </div>
+                <div class="note-list" id="noteList"></div>
+            </div>
+
+            <div class="ai-btn-wrap">
+                <button class="btn-ai-open" id="aiToggleBtn" onclick="toggleAiChat()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    AI 도우미 열기
+                </button>
+            </div>
+
+            <div class="chat-inline" id="chatInline">
+                <div class="chat-inline-header">
+                    <div class="chat-inline-dot"></div>
+                    <span class="chat-inline-label">면접 AI 코치</span>
+                </div>
+                <div class="chat-context-mini" id="chatContextMini">
+                    질문을 선택하면 해당 내용을 바탕으로 도움을 드려요.
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-empty-inline" id="chatEmptyState">
+                        <div class="chat-empty-inline-icon">💬</div>
+                        면접 질문·모범 답변·개념<br>무엇이든 물어보세요!
+                        <div class="chat-suggest">
+                            <button class="chat-suggest-btn" onclick="sendSuggest(this)">모범 답변 구조</button>
+                            <button class="chat-suggest-btn" onclick="sendSuggest(this)">핵심 키워드 정리</button>
+                            <button class="chat-suggest-btn" onclick="sendSuggest(this)">더 잘 답변하려면?</button>
+                            <button class="chat-suggest-btn" onclick="sendSuggest(this)">관련 개념 설명</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-wrap">
+                    <textarea class="chat-input" id="chatInput"
+                        placeholder="질문 입력... (Enter 전송, Shift+Enter 줄바꿈)"
+                        rows="1"
+                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+                        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"></textarea>
+                    <button class="btn-send" id="sendBtn" onclick="sendChat()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 질문 상세 -->
+        <div id="detailPanel" class="detail-panel">
+            <div class="detail-placeholder">
+                <div class="detail-placeholder-icon">📝</div>
+                왼쪽 목록에서 질문을 선택하세요<br>
+                질문·답변·AI 피드백을 확인하고<br>
+                나만의 복습 메모를 작성할 수 있어요
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    let allNotes = [];
+    let filtered = [];
+    let selectedId = null;
+    let currentFilter = 'all';
+    let currentNote = null;
+    let chatHistory = [];
+    let chatOpen = false;
+
+    // ── 드로어 ──
+    function toggleDrawer() {
+        document.getElementById('drawer').classList.contains('open') ? closeDrawer() : openDrawer();
+    }
+    function openDrawer() {
+        document.getElementById('drawer').classList.add('open');
+        document.getElementById('drawerOverlay').classList.add('open');
+        document.getElementById('hamburger').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeDrawer() {
+        document.getElementById('drawer').classList.remove('open');
+        document.getElementById('drawerOverlay').classList.remove('open');
+        document.getElementById('hamburger').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+    async function logout() {
+        await fetch('/api/members/logout', { method: 'POST' });
+        location.href = '/';
+    }
+
+    // ── 로그인 확인 ──
+    fetch('/api/members/me')
+        .then(res => { if (!res.ok) { location.href='/'; return null; } return res.json(); })
+        .then(data => {
+            if (!data) return;
+            const name = data.name || data.email || '사용자';
+            document.getElementById('userName').textContent = name + '님';
+            document.getElementById('userAvatar').textContent = name.charAt(0);
+            document.getElementById('drawerUserName').textContent = name + '님';
+            document.getElementById('drawerAvatar').textContent = name.charAt(0);
+            loadNotes();
+        })
+        .catch(() => { location.href='/'; });
+
+    // ── 노트 로딩 ──
+    function loadNotes() {
+        allNotes = JSON.parse(localStorage.getItem('jm_interview_history') || '[]');
+        allNotes.sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+        document.getElementById('totalCount').textContent = allNotes.length;
+        document.getElementById('memoCount').textContent = allNotes.filter(n => n.memo && n.memo.trim()).length;
+
+        const jobs = [...new Set(allNotes.map(n => n.job).filter(Boolean))];
+        const chips = document.getElementById('filterChips');
+        chips.innerHTML = `<div class="chip ${currentFilter==='all'?'active':''}" onclick="setFilter('all',this)">전체</div>`;
+        jobs.forEach(job => {
+            chips.innerHTML += `<div class="chip ${currentFilter===job?'active':''}" onclick="setFilter('${job}',this)">${job}</div>`;
+        });
+        filterNotes();
+    }
+
+    function setFilter(val, el) {
+        currentFilter = val;
+        document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        filterNotes();
+    }
+
+    function filterNotes() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        filtered = allNotes.filter(n => {
+            const matchJob = currentFilter === 'all' || n.job === currentFilter;
+            const matchKw  = !keyword || (n.question||'').toLowerCase().includes(keyword);
+            return matchJob && matchKw;
+        });
+        renderList();
+    }
+
+    function renderList() {
+        const list = document.getElementById('noteList');
+        document.getElementById('listCount').textContent = filtered.length + '개';
+        if (filtered.length === 0) {
+            list.innerHTML = `<div class="note-empty"><div class="note-empty-icon">🔍</div>해당하는 질문이 없어요.<br>면접 코칭에서 먼저 연습해보세요!</div>`;
+            return;
+        }
+        list.innerHTML = filtered.map(n => `
+            <div class="note-item ${selectedId===String(n.id)?'active':''}" onclick="selectNote('${n.id}')">
+                <div class="note-item-top">
+                    <span class="note-job-tag">${n.job||'면접 질문'}</span>
+                    ${n.memo&&n.memo.trim()?'<span class="note-memo-badge">메모 ✓</span>':''}
+                </div>
+                <div class="note-item-q">${n.question||'질문 없음'}</div>
+                <div class="note-item-date">${n.date||''}</div>
+            </div>
+        `).join('');
+    }
+
+    function selectNote(id) {
+        id = String(id);
+        selectedId = id;
+        const n = allNotes.find(n => String(n.id) === id);
+        if (!n) return;
+        currentNote = n;
+        renderList();
+        if (chatOpen) updateChatContext();
+
+        document.getElementById('detailPanel').innerHTML = `
+            <div class="detail-header">
+                <div style="flex:1">
+                    <div class="detail-job-tag">${n.job||'면접 질문'}</div>
+                    <div class="detail-question">${n.question||''}</div>
+                    <div class="detail-date">${n.date||''}</div>
+                </div>
+                <button class="btn-delete-detail" onclick="deleteNote('${n.id}')">삭제</button>
+            </div>
+            <div class="detail-body">
+                <div>
+                    <div class="section-label">내 답변</div>
+                    <div class="answer-box">${cleanForeignText(n.answer)||'답변이 기록되지 않았어요.'}</div>
+                </div>
+                ${n.feedback ? `<div>
+                    <div class="section-label">AI 피드백</div>
+                    <div class="feedback-box">${cleanForeignText(n.feedback)}</div>
+                </div>` : ''}
+                <div class="memo-section">
+                    <div class="section-label">나의 복습 메모</div>
+                    <textarea class="memo-textarea" id="memoInput"
+                        placeholder="이 질문에 대한 나만의 정리 메모를 작성하세요...">${n.memo||''}</textarea>
+                    <div class="memo-footer">
+                        <span class="memo-hint">💡 저장 버튼을 눌러주세요.</span>
+                        <button class="btn-save-memo" onclick="saveMemo('${n.id}')">메모 저장</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function toggleAiChat() {
+        chatOpen = !chatOpen;
+        const btn = document.getElementById('aiToggleBtn');
+        const panel = document.getElementById('chatInline');
+
+        if (chatOpen) {
+            panel.classList.add('open');
+            btn.classList.add('active');
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> AI 도우미 닫기`;
+            updateChatContext();
+            setTimeout(() => panel.scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
+        } else {
+            panel.classList.remove('open');
+            btn.classList.remove('active');
+            btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> AI 도우미 열기`;
+        }
+    }
+
+    function updateChatContext() {
+        const el = document.getElementById('chatContextMini');
+        if (!el) return;
+        if (currentNote) {
+            el.innerHTML = `현재 선택된 질문: <strong>${currentNote.question||''}</strong>`;
+        } else {
+            el.textContent = '질문을 선택하면 해당 내용을 바탕으로 도움을 드려요.';
+        }
+    }
+
+    function sendSuggest(btn) {
+        document.getElementById('chatInput').value = btn.textContent;
+        sendChat();
+    }
+
+    async function sendChat() {
+        const input = document.getElementById('chatInput');
+        const messagesEl = document.getElementById('chatMessages');
+        const sendBtn  = document.getElementById('sendBtn');
+        if (!input || !messagesEl) return;
+
+        const userText = input.value.trim();
+        if (!userText) return;
+
+        input.value = '';
+        input.style.height = 'auto';
+        sendBtn.disabled = true;
+
+        const empty = document.getElementById('chatEmptyState');
+        if (empty) empty.remove();
+
+        const userBubble = document.createElement('div');
+        userBubble.className = 'msg-bubble msg-user';
+        userBubble.textContent = userText;
+        messagesEl.appendChild(userBubble);
+
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'msg-bubble msg-ai loading';
+        aiBubble.textContent = '답변 생성 중...';
+        messagesEl.appendChild(aiBubble);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        const systemPrompt = `당신은 한국어 전용 면접 코치 AI입니다. 반드시 한국어로만 답변하세요. 영어 약어(API, HTTP, SQL 등 기술 용어)는 허용하나 일반 단어는 모두 한국어로만 사용하세요. 한자, 일본어, 스페인어 등 외국어는 절대 사용하지 마세요.` +
+            (currentNote ? `\n\n현재 복습 중인 면접 정보:\n- 직무: ${currentNote.job||''}\n- 면접 질문: ${currentNote.question||''}\n- 사용자 답변: ${currentNote.answer||''}\n- AI 피드백: ${currentNote.feedback||''}` : '');
+
+        chatHistory.push({ role:'user', content:userText });
+
+        try {
+            const res = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ system: systemPrompt, messages: chatHistory })
+            });
+            const data = await res.json();
+            const aiText = cleanForeignText(data.text || data.error || '답변을 가져오지 못했어요.');
+            chatHistory.push({ role:'assistant', content:aiText });
+            aiBubble.className = 'msg-bubble msg-ai';
+            aiBubble.textContent = aiText;
+        } catch(e) {
+            aiBubble.className = 'msg-bubble msg-ai';
+            aiBubble.textContent = '오류가 발생했어요. 다시 시도해주세요.';
+            chatHistory.pop();
+        } finally {
+            sendBtn.disabled = false;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+    }
+
+    function saveMemo(id) {
+        id = String(id);
+        const memo = document.getElementById('memoInput').value;
+        const idx = allNotes.findIndex(n => String(n.id) === id);
+        if (idx !== -1) {
+            allNotes[idx].memo = memo;
+            localStorage.setItem('jm_interview_history', JSON.stringify(allNotes));
+            loadNotes();
+            selectNote(id);
+            showToast('메모가 저장됐어요! ✓', 'success');
+        }
+    }
+
+    function deleteNote(id) {
+        id = String(id);
+        if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+        allNotes = allNotes.filter(n => String(n.id) !== id);
+        localStorage.setItem('jm_interview_history', JSON.stringify(allNotes));
+        selectedId = null;
+        currentNote = null;
+        document.getElementById('detailPanel').innerHTML = `
+            <div class="detail-placeholder">
+                <div class="detail-placeholder-icon">📝</div>
+                왼쪽 목록에서 질문을 선택하세요
+            </div>`;
+        if (chatOpen) updateChatContext();
+        loadNotes();
+        showToast('삭제했어요.', 'success');
+    }
+
+    function cleanForeignText(text) {
+        if (!text) return text;
+        text = text.replace(/[\u4E00-\u9FFF\u3400-\u4DBF]/g, '');
+        text = text.replace(/[\u3040-\u309F\u30A0-\u30FF]/g, '');
+        text = text.replace(/[\u0600-\u06FF\u0E00-\u0E7F\u0400-\u04FF]/g, '');
+        const map = {
+            'preferable':'선호하는','preferred':'우대','required':'필수',
+            'experience':'경험','knowledge':'지식','ability':'능력',
+            'skills':'기술','understanding':'이해','familiar':'익숙한',
+            'proficient':'능숙한','excellent':'우수한','strong':'강한',
+            'good':'좋은','basic':'기본','advanced':'고급',
+            'junior':'주니어','senior':'시니어','lead':'리드',
+            'team':'팀','project':'프로젝트','system':'시스템',
+            'service':'서비스','platform':'플랫폼','solution':'솔루션',
+            'conocer':'알다','para':'위해','con':'와','que':'것',
+            'les':'그들을','vous':'당신을','est':'이다','des':'의',
+            'und':'그리고','der':'의','die':'그','das':'그것',
+            'ist':'이다','nicht':'아님','eine':'하나의','ein':'하나의'
+        };
+        Object.entries(map).forEach(([en, ko]) => {
+            text = text.replace(new RegExp('\\b' + en + '\\b', 'gi'), ko);
+        });
+        text = text.replace(/  +/g, ' ').replace(/\n +/g, '\n').trim();
+        return text;
+    }
+
+    function showToast(msg, type='') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast'+(type?' '+type:'')+' show';
+        setTimeout(() => t.className='toast', 2800);
+    }
+</script>
+</body>
+</html>

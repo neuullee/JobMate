@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 회원가입</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --navy:#0f2340; --navy2:#0a1a2e; --accent:#3b82f6; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Pretendard','Noto Sans KR',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy2) 0%,#1a2e4a 100%);padding:24px;}
+        .card{background:#fff;border-radius:20px;padding:44px 40px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+        .logo{text-align:center;font-size:1.6rem;font-weight:900;letter-spacing:6px;color:var(--navy);margin-bottom:6px;}
+        .logo-sub{text-align:center;font-size:12px;color:#94a3b8;letter-spacing:2px;margin-bottom:28px;}
+        h2{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:22px;text-align:center;}
+
+        /* 단계 표시 */
+        .steps{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:28px;}
+        .step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+        .step-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid #dce8f0;color:#94a3b8;background:#f8fafc;transition:all .3s;}
+        .step-circle.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+        .step-circle.done{background:#16a34a;border-color:#16a34a;color:#fff;}
+        .step-label{font-size:10px;color:#94a3b8;font-weight:600;white-space:nowrap;}
+        .step-label.active{color:var(--navy);font-weight:700;}
+        .step-line{height:2px;flex:1;background:#dce8f0;margin-bottom:16px;}
+        .step-line.done{background:#16a34a;}
+
+        .form-group{margin-bottom:14px;}
+        .form-group label{display:block;font-size:12.5px;font-weight:700;color:#2a3f56;margin-bottom:6px;}
+        .form-group input{width:100%;padding:11px 14px;border:1.5px solid #dce8f0;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:all .2s;background:#f7fafc;color:#1a2a3a;}
+        .form-group input:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+        .form-group input::placeholder{color:#b0c4d4;}
+        .input-row{display:flex;gap:8px;}
+        .input-row input{flex:1;}
+        .btn-send{padding:11px 16px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .2s;}
+        .btn-send:hover{background:#162d4a;}
+        .btn-send:disabled{background:#94a3b8;cursor:not-allowed;}
+        .verify-status{font-size:12px;margin-top:6px;font-weight:600;min-height:16px;}
+        .verify-status.ok{color:#16a34a;}
+        .verify-status.err{color:#dc2626;}
+        .verify-status.info{color:#2563eb;}
+
+        .btn-main{width:100%;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;transition:all .25s;}
+        .btn-main:hover{background:#162d4a;transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,35,64,.28);}
+        .btn-main:disabled{background:#94a3b8;cursor:not-allowed;transform:none;box-shadow:none;}
+        .btn-outline{width:100%;padding:12px;background:transparent;color:#4a6480;border:1.5px solid #dce8f0;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .2s;}
+        .btn-outline:hover{border-color:#a8bfd4;background:#f7fafc;color:var(--navy);}
+
+        .msg{margin-top:12px;padding:10px 14px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;display:none;}
+        .msg.ok{background:#d4edda;color:#155724;}
+        .msg.err{background:#f8d7da;color:#721c24;}
+
+        .section-title{font-size:13px;font-weight:700;color:var(--navy);margin:16px 0 10px;padding-bottom:8px;border-bottom:1px solid #f0f4f8;}
+        .hint{font-size:11px;color:#94a3b8;font-weight:400;margin-top:4px;}
+
+        /* 단계별 패널 */
+        .panel{display:none;}
+        .panel.active{display:block;}
+
+        @media(max-width:520px){.card{padding:28px 20px;}}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">JOBMATE</div>
+    <div class="logo-sub">회원가입</div>
+
+    <!-- 단계 표시 -->
+    <div class="steps">
+        <div class="step">
+            <div class="step-circle active" id="sc1">1</div>
+            <div class="step-label active" id="sl1">이메일 인증</div>
+        </div>
+        <div class="step-line" id="line1"></div>
+        <div class="step">
+            <div class="step-circle" id="sc2">2</div>
+            <div class="step-label" id="sl2">기본 정보</div>
+        </div>
+        <div class="step-line" id="line2"></div>
+        <div class="step">
+            <div class="step-circle" id="sc3">3</div>
+            <div class="step-label" id="sl3">완료</div>
+        </div>
+    </div>
+
+    <!-- Step 1: 이메일 인증 -->
+    <div class="panel active" id="panel1">
+        <h2>이메일 인증</h2>
+        <div class="form-group">
+            <label>이메일 주소</label>
+            <div class="input-row">
+                <input type="email" id="emailInput" placeholder="example@email.com">
+                <button class="btn-send" id="btnSend" onclick="sendCode()">인증코드 발송</button>
+            </div>
+            <div class="verify-status" id="sendStatus"></div>
+        </div>
+        <div class="form-group" id="codeGroup" style="display:none;">
+            <label>인증 코드 <span style="color:#94a3b8;font-weight:400">(6자리, 5분 이내 입력)</span></label>
+            <div class="input-row">
+                <input type="text" id="codeInput" placeholder="000000" maxlength="6" inputmode="numeric">
+                <button class="btn-send" onclick="verifyCode()">확인</button>
+            </div>
+            <div class="verify-status" id="codeStatus"></div>
+        </div>
+        <button class="btn-main" id="btnNext1" onclick="goStep2()" disabled>다음</button>
+        <button class="btn-outline" onclick="location.href='/'">로그인으로 돌아가기</button>
+    </div>
+
+    <!-- Step 2: 기본 정보 입력 -->
+    <div class="panel" id="panel2">
+        <h2>기본 정보 입력</h2>
+        <div class="form-group">
+            <label>이름 <span style="color:#ef4444">*</span></label>
+            <input type="text" id="nameInput" placeholder="홍길동">
+        </div>
+        <div class="form-group">
+            <label>비밀번호 <span style="color:#ef4444">*</span></label>
+            <input type="password" id="pwInput" placeholder="8자 이상 입력">
+        </div>
+        <div class="form-group">
+            <label>비밀번호 확인 <span style="color:#ef4444">*</span></label>
+            <input type="password" id="pw2Input" placeholder="비밀번호 재입력">
+        </div>
+        <div class="section-title">추가 정보 (선택)</div>
+        <div class="form-group">
+            <label>생년월일</label>
+            <input type="date" id="birthInput">
+            <div class="hint">비밀번호 찾기 등 본인 확인에 사용됩니다.</div>
+        </div>
+        <div class="form-group">
+            <label>전화번호</label>
+            <input type="tel" id="phoneInput" placeholder="010-0000-0000">
+        </div>
+        <button class="btn-main" onclick="signup()">가입 완료</button>
+        <div class="msg" id="signupMsg"></div>
+    </div>
+
+    <!-- Step 3: 완료 -->
+    <div class="panel" id="panel3" style="text-align:center;">
+        <div style="font-size:48px;margin:12px 0;">🎉</div>
+        <h2>가입 완료!</h2>
+        <p style="font-size:14px;color:#64748b;margin:12px 0 24px;line-height:1.7;">환영합니다!<br>맞춤 정보 설정 후 맞춤 공고를 확인하세요.</p>
+        <button class="btn-main" onclick="location.href='/profile-setup'">맞춤 정보 설정하러 가기</button>
+    </div>
+</div>
+
+<script>
+    let verifiedEmail = '';
+    let countdown = null;
+
+    async function sendCode() {
+        const email = document.getElementById('emailInput').value.trim();
+        if (!email || !email.includes('@')) {
+            setStatus('sendStatus', '올바른 이메일을 입력해주세요.', 'err'); return;
+        }
+        const btn = document.getElementById('btnSend');
+        btn.disabled = true;
+        setStatus('sendStatus', '발송 중...', 'info');
+
+        const res = await fetch('/api/members/verify/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, checkDuplicate: 'true' })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            setStatus('sendStatus', '인증코드를 발송했습니다. 메일을 확인해주세요.', 'ok');
+            document.getElementById('codeGroup').style.display = 'block';
+            document.getElementById('emailInput').readOnly = true;
+            startCountdown(btn);
+        } else {
+            setStatus('sendStatus', data.message, 'err');
+            btn.disabled = false;
+        }
+    }
+
+    function startCountdown(btn) {
+        let sec = 300;
+        clearInterval(countdown);
+        countdown = setInterval(() => {
+            sec--;
+            btn.textContent = `재발송 (${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')})`;
+            if (sec <= 0) { clearInterval(countdown); btn.disabled = false; btn.textContent = '인증코드 재발송'; }
+        }, 1000);
+    }
+
+    async function verifyCode() {
+        const email = document.getElementById('emailInput').value.trim();
+        const code  = document.getElementById('codeInput').value.trim();
+        if (code.length !== 6) { setStatus('codeStatus', '6자리 코드를 입력해주세요.', 'err'); return; }
+
+        const res = await fetch('/api/members/verify/check', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, code })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            verifiedEmail = email;
+            setStatus('codeStatus', '✅ 인증 완료!', 'ok');
+            document.getElementById('codeInput').readOnly = true;
+            document.getElementById('btnNext1').disabled = false;
+            clearInterval(countdown);
+        } else {
+            setStatus('codeStatus', data.message, 'err');
+        }
+    }
+
+    function goStep2() {
+        if (!verifiedEmail) return;
+        setStep(2);
+    }
+
+    async function signup() {
+        const name     = document.getElementById('nameInput').value.trim();
+        const pw       = document.getElementById('pwInput').value;
+        const pw2      = document.getElementById('pw2Input').value;
+        const birth    = document.getElementById('birthInput').value;
+        const phone    = document.getElementById('phoneInput').value.trim();
+
+        if (!name)            { showMsg('이름을 입력해주세요.', 'err'); return; }
+        if (pw.length < 8)    { showMsg('비밀번호는 8자 이상이어야 합니다.', 'err'); return; }
+        if (pw !== pw2)       { showMsg('비밀번호가 일치하지 않습니다.', 'err'); return; }
+
+        const res = await fetch('/api/members/signup', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, email: verifiedEmail, password: pw, birthDate: birth, phone })
+        });
+
+        if (res.ok) {
+            setStep(3);
+        } else {
+            const text = await res.text();
+            showMsg(text || '가입 중 오류가 발생했습니다.', 'err');
+        }
+    }
+
+    function setStep(n) {
+        [1,2,3].forEach(i => {
+            document.getElementById('panel'+i).classList.toggle('active', i === n);
+            const sc = document.getElementById('sc'+i);
+            const sl = document.getElementById('sl'+i);
+            if (i < n) { sc.classList.add('done'); sc.textContent='✓'; sc.classList.remove('active'); sl.classList.remove('active'); }
+            else if (i === n) { sc.classList.add('active'); sc.classList.remove('done'); sc.textContent=i; sl.classList.add('active'); }
+            else { sc.classList.remove('active','done'); sc.textContent=i; sl.classList.remove('active'); }
+        });
+        [1,2].forEach(i => {
+            const line = document.getElementById('line'+i);
+            if (i < n) line.classList.add('done'); else line.classList.remove('done');
+        });
+    }
+
+    function setStatus(id, msg, type) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.className = 'verify-status ' + type;
+    }
+    function showMsg(text, type) {
+        const el = document.getElementById('signupMsg');
+        el.style.display = 'block';
+        el.className = 'msg ' + (type === 'ok' ? 'ok' : 'err');
+        el.textContent = text;
+    }
+</script>
+</body>
+</html>

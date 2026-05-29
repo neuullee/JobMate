@@ -1,0 +1,2 @@
+### 맞춤 공고 조회
+GET http://localhost:8080/api/jobs/match

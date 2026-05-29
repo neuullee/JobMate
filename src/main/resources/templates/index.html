@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - IT 맞춤 채용 플랫폼</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --navy:#0f2340; --navy2:#0a1a2e; --accent:#3b82f6; --accent2:#60a5fa; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Pretendard','Noto Sans KR',sans-serif;min-height:100vh;display:flex;background:var(--navy2);overflow:hidden}
+        .brand-panel{flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 72px;position:relative;overflow:hidden}
+        .brand-panel::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.04) 1px,transparent 1px);background-size:48px 48px}
+        .brand-panel::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 80%,rgba(59,130,246,.1) 0%,transparent 60%),radial-gradient(ellipse at 80% 10%,rgba(15,35,64,.7) 0%,transparent 55%)}
+        .circle-deco{position:absolute;border-radius:50%;pointer-events:none}
+        .circle-1{width:520px;height:520px;border:1px solid rgba(59,130,246,.08);top:-140px;right:-140px}
+        .circle-2{width:320px;height:320px;border:1px solid rgba(59,130,246,.05);top:-40px;right:-40px}
+        .circle-3{width:200px;height:200px;background:radial-gradient(circle,rgba(59,130,246,.07) 0%,transparent 70%);bottom:80px;left:10%}
+        .brand-content{position:relative;z-index:2}
+        .brand-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.22);color:#93c5fd;font-size:11px;font-weight:600;letter-spacing:2.5px;padding:6px 16px;border-radius:100px;margin-bottom:32px;animation:fadeUp .7s ease .1s both}
+        .brand-tag-dot{width:6px;height:6px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,.8);animation:pulse 2s ease-in-out infinite;flex-shrink:0}
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+        .brand-logo{font-size:3.8rem;font-weight:900;letter-spacing:10px;color:white;line-height:1;margin-bottom:6px;animation:fadeUp .7s ease .2s both}
+        .brand-logo-sub{display:block;font-size:10.5px;font-weight:500;letter-spacing:4px;color:rgba(148,180,220,.5);margin-bottom:36px;animation:fadeUp .7s ease .3s both}
+        .brand-subtitle{font-size:1.05rem;color:#7aa8cc;font-weight:400;line-height:1.85;margin-bottom:52px;animation:fadeUp .7s ease .4s both}
+        .brand-subtitle strong{color:#b8d4ec;font-weight:600}
+        .brand-features{display:flex;flex-direction:column;gap:12px;animation:fadeUp .7s ease .5s both}
+        .brand-feature{display:flex;align-items:center;gap:14px}
+        .feature-icon-wrap{width:34px;height:34px;border-radius:9px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .feature-icon-wrap svg{width:16px;height:16px}
+        .feature-text{font-size:13px;color:#8ab0cc;font-weight:400}
+        .brand-stats{display:flex;gap:36px;margin-top:52px;padding-top:28px;border-top:1px solid rgba(255,255,255,.05);animation:fadeUp .7s ease .6s both}
+        .brand-stat-num{font-size:1.55rem;font-weight:800;color:white;line-height:1}
+        .brand-stat-num span{color:var(--accent2)}
+        .brand-stat-label{font-size:11px;color:#4e7090;margin-top:5px}
+        .login-panel{width:510px;flex-shrink:0;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:52px 50px;position:relative;overflow-y:auto;animation:slideIn .8s cubic-bezier(.22,1,.36,1) both}
+        @keyframes slideIn{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
+        .login-header{margin-bottom:30px}
+        .login-title{font-size:1.7rem;font-weight:800;color:var(--navy);margin-bottom:8px;letter-spacing:-.3px}
+        .login-sub{font-size:13.5px;color:#7a90a8}
+        .login-sub a{color:var(--accent);text-decoration:none;font-weight:600}
+        .login-sub a:hover{text-decoration:underline}
+        .form-group{margin-bottom:14px}
+        .form-group label{display:block;font-size:12.5px;font-weight:600;color:#2a3f56;margin-bottom:7px}
+        .form-group input{width:100%;padding:12px 16px;border:1.5px solid #dce8f0;border-radius:10px;font-size:14px;font-family:inherit;color:#1a2a3a;outline:none;transition:all .2s;background:#f7fafc}
+        .form-group input:focus{border-color:var(--accent);background:white;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+        .form-group input::placeholder{color:#b0c4d4}
+        .btn-login{width:100%;padding:13px;background:var(--navy);color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;transition:all .25s;letter-spacing:.3px}
+        .btn-login:hover{background:#162d4a;transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,35,64,.28)}
+        .error-msg{color:#c0392b;font-size:13px;margin-top:10px;display:none;padding:10px 14px;background:#fdf0ef;border-radius:8px;border-left:3px solid #e74c3c}
+        .account-links{display:flex;justify-content:flex-end;gap:12px;margin-top:10px}
+        .account-links a{font-size:12.5px;color:#64748b;text-decoration:none;font-weight:600}
+        .account-links a:hover{color:var(--accent);text-decoration:underline}
+        .divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+        .divider hr{flex:1;border:none;border-top:1px solid #eaf0f6}
+        .divider span{font-size:12px;color:#a8b8c8;white-space:nowrap;font-weight:500}
+        .social-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+        .btn-social{padding:11px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;border:none;transition:all .2s}
+        .btn-kakao{background:#FEE500;color:#191919}
+        .btn-kakao:hover{background:#f0d800;transform:translateY(-1px);box-shadow:0 4px 12px rgba(254,229,0,.35)}
+        .btn-naver{background:#03C75A;color:white}
+        .btn-naver:hover{background:#02b350;transform:translateY(-1px);box-shadow:0 4px 12px rgba(3,199,90,.35)}
+        .btn-google{grid-column:1/-1;background:#f8fafc;color:#2a3f56;border:1.5px solid #dce8f0}
+        .btn-google:hover{border-color:#b0c4d8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.07)}
+        .signup-btn{width:100%;padding:12px;background:transparent;color:#4a6480;border:1.5px solid #dce8f0;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:4px}
+        .signup-btn:hover{border-color:#a8bfd4;background:#f7fafc;color:var(--navy)}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+        @media(max-width:768px){body{flex-direction:column;overflow:auto}.brand-panel{padding:36px 28px 28px;min-height:auto}.brand-logo{font-size:2.4rem;letter-spacing:7px}.brand-subtitle,.brand-features,.brand-stats{display:none}.login-panel{width:100%;padding:32px 24px 48px}.circle-1,.circle-2{display:none}}
+    </style>
+</head>
+<body>
+
+<div class="brand-panel">
+    <div class="circle-deco circle-1"></div>
+    <div class="circle-deco circle-2"></div>
+    <div class="circle-deco circle-3"></div>
+    <div class="brand-content">
+        <div class="brand-tag"><span class="brand-tag-dot"></span>IT 맞춤 채용 플랫폼</div>
+        <div class="brand-logo">JOBMATE</div>
+        <span class="brand-logo-sub">SMART JOB MATCHING PLATFORM</span>
+        <p class="brand-subtitle">내 프로필 기반으로 <strong>맞춤 채용공고를 점수화</strong>하고<br>AI 면접 코칭으로 <strong>취업 성공률을 높이세요.</strong></p>
+        <div class="brand-features">
+            <div class="brand-feature">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                </div>
+                <span class="feature-text">가중치 기반 공고 매칭 점수 시스템</span>
+            </div>
+            <div class="brand-feature">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
+                </div>
+                <span class="feature-text">AI 면접 예상 질문 &amp; 답변 피드백</span>
+            </div>
+            <div class="brand-feature">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                </div>
+                <span class="feature-text">국민연금 + DART 기업 정보 연동</span>
+            </div>
+            <div class="brand-feature">
+                <div class="feature-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17 14v7M14 17h7"/></svg>
+                </div>
+                <span class="feature-text">지원 현황 칸반 보드 관리</span>
+            </div>
+        </div>
+        <div class="brand-stats">
+            <div><div class="brand-stat-num">100<span>+</span></div><div class="brand-stat-label">매칭 공고</div></div>
+            <div><div class="brand-stat-num">4<span>개</span></div><div class="brand-stat-label">외부 API 연동</div></div>
+            <div><div class="brand-stat-num">AI<span>↑</span></div><div class="brand-stat-label">면접 코칭</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="login-panel">
+    <div class="login-header">
+        <h1 class="login-title">로그인</h1>
+        <p class="login-sub">계정이 없으신가요? <a href="/signup">회원가입</a></p>
+    </div>
+
+    <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="email" placeholder="example@email.com" onkeydown="if(event.key==='Enter') login()">
+    </div>
+
+    <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="password" placeholder="비밀번호를 입력하세요" onkeydown="if(event.key==='Enter') login()">
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button class="btn-login" onclick="login()">로그인</button>
+
+    <div class="account-links">
+        <a href="/find-id">아이디 찾기</a>
+        <a href="/find-password">비밀번호 찾기</a>
+    </div>
+
+    <div class="divider"><hr><span>소셜 계정으로 시작하기</span><hr></div>
+
+    <div class="social-grid">
+        <a class="btn-social btn-kakao" href="/oauth2/authorization/kakao">
+            <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M9 1.5C4.86 1.5 1.5 4.16 1.5 7.44c0 2.1 1.35 3.95 3.39 5.01l-.87 3.2a.28.28 0 0 0 .43.3l3.74-2.49c.26.03.52.04.78.04 4.14 0 7.5-2.66 7.5-5.94S13.14 1.5 9 1.5z" fill="#191919"/></svg>
+            카카오
+        </a>
+        <a class="btn-social btn-naver" href="/oauth2/authorization/naver">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z"/></svg>
+            네이버
+        </a>
+        <a class="btn-social btn-google" href="/oauth2/authorization/google">
+            <svg width="15" height="15" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            구글로 시작하기
+        </a>
+    </div>
+
+    <div class="divider"><hr><span>또는</span><hr></div>
+    <button class="signup-btn" onclick="location.href='/signup'">새 계정 만들기</button>
+</div>
+
+<script>
+    async function login() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const errorMsg = document.getElementById('errorMsg');
+
+        errorMsg.style.display = 'none';
+
+        if (!email || !password) {
+            errorMsg.textContent = '이메일과 비밀번호를 입력해주세요.';
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/members/login', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({email,password})
+            });
+
+            if (res.ok) {
+                location.href = '/dashboard';
+            } else {
+                errorMsg.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
+                errorMsg.style.display = 'block';
+            }
+        } catch {
+            errorMsg.textContent = '서버 연결에 실패했습니다.';
+            errorMsg.style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>

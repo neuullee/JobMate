@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 계정 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:#1e3a5f; --navy2:#162d4a; --navy-light:#2a5298;
+            --accent:#3b82f6;
+            --bg:#f0f4f8; --border:#d6e0ec; --text:#1a2a3a; --text-sub:#6b7f96;
+            --green:#10b981; --red:#ef4444;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Pretendard',sans-serif; background:var(--bg); min-height:100vh; overflow-x:hidden; }
+
+        header { background:linear-gradient(135deg,var(--navy2),var(--navy)); padding:0 48px; height:68px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 20px rgba(30,58,95,0.3); position:sticky; top:0; z-index:200; }
+        header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+        .logo { color:white; font-size:1.4rem; font-weight:900; letter-spacing:6px; text-decoration:none; }
+        .header-right { display:flex; align-items:center; gap:12px; }
+        .user-chip { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:100px; padding:6px 14px; }
+        .user-avatar { width:26px; height:26px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; }
+        .user-name { color:#e2eaf4; font-size:13px; }
+        .hamburger { width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; }
+        .hamburger span { display:block; width:18px; height:2px; background:white; border-radius:2px; transition:all .3s; }
+        .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+        .hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+        .hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+        .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:300; opacity:0; visibility:hidden; transition:all .3s; }
+        .drawer-overlay.open { opacity:1; visibility:visible; }
+        .drawer { position:fixed; top:0; right:-320px; width:300px; height:100vh; background:white; z-index:400; display:flex; flex-direction:column; transition:right .35s cubic-bezier(0.34,1.56,0.64,1); box-shadow:-8px 0 40px rgba(0,0,0,0.15); }
+        .drawer.open { right:0; }
+        .drawer-header { background:linear-gradient(135deg,var(--navy2),var(--navy)); padding:24px 24px 20px; position:relative; flex-shrink:0; }
+        .drawer-header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+        .drawer-logo { color:white; font-size:1.1rem; font-weight:900; letter-spacing:4px; margin-bottom:16px; }
+        .drawer-user { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.1); border-radius:10px; padding:10px 14px; }
+        .drawer-avatar { width:38px; height:38px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:white; flex-shrink:0; }
+        .drawer-user-name { color:white; font-size:14px; font-weight:700; }
+        .drawer-user-sub { color:rgba(255,255,255,0.6); font-size:11px; margin-top:2px; }
+        .drawer-close { position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,0.15); border:none; color:white; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .drawer-nav { flex:1; padding:12px; overflow-y:auto; }
+        .drawer-section-label { font-size:10px; font-weight:700; color:var(--text-sub); letter-spacing:2px; text-transform:uppercase; padding:10px 12px 6px; }
+        .drawer-item { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; font-size:14px; font-weight:600; color:var(--text); cursor:pointer; text-decoration:none; transition:all .2s; margin-bottom:2px; }
+        .drawer-item:hover { background:#f0f4f8; color:var(--navy); }
+        .drawer-item.active { background:#eef4ff; color:var(--navy); }
+        .item-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .item-icon.blue{background:#dbeafe}
+        .item-icon.green{background:#dcfce7}
+        .item-icon.yellow{background:#fef3c7}
+        .item-icon.purple{background:#f3e8ff}
+        .item-icon.pink{background:#fce7f3}
+        .item-icon.indigo{background:#e0e7ff}
+        .item-icon.orange{background:#fff7ed}
+        .item-icon.note{background:#f5f3ff}
+        .item-text{flex:1}
+        .item-desc{font-size:11px;color:var(--text-sub);font-weight:400;margin-top:1px;}
+        .drawer-divider { height:1px; background:var(--border); margin:8px 12px; }
+        .drawer-footer { padding:16px 12px; border-top:1px solid var(--border); flex-shrink:0; }
+        .btn-logout-drawer { width:100%; padding:12px; border-radius:12px; background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .btn-logout-drawer:hover { background:#fecaca; }
+
+        .container { max-width:620px; margin:40px auto 80px; padding:0 24px; }
+        .page-title { margin-bottom:28px; }
+        .page-title h2 { font-size:22px; font-weight:900; color:var(--navy); margin-bottom:6px; }
+        .page-title p { font-size:14px; color:var(--text-sub); }
+
+        .account-card { background:white; border-radius:18px; border:1.5px solid var(--border); padding:28px; margin-bottom:16px; box-shadow:0 2px 12px rgba(30,58,95,0.06); }
+        .card-title { font-size:15px; font-weight:800; color:var(--navy); margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+        .card-title-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+        .field-group { margin-bottom:14px; }
+        .field-group label { display:block; font-size:12.5px; font-weight:700; color:var(--text); margin-bottom:7px; }
+        .field-group input { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; outline:none; transition:all .2s; background:#f7fafc; color:var(--text); }
+        .field-group input:focus { border-color:var(--accent); background:white; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+        .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+        .btn-save { padding:11px 24px; background:var(--navy); color:white; border:none; border-radius:10px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; margin-top:4px; }
+        .btn-save:hover { background:var(--navy-light); transform:translateY(-1px); }
+        .btn-save.purple { background:#7c3aed; }
+        .btn-save.purple:hover { background:#6d28d9; }
+
+        .status-msg { font-size:12.5px; font-weight:600; min-height:18px; margin-top:10px; padding:9px 14px; border-radius:8px; display:none; }
+        .status-msg.ok  { background:#dcfce7; color:#15803d; display:block; }
+        .status-msg.err { background:#fee2e2; color:#dc2626; display:block; }
+
+        .pw-match { font-size:12px; font-weight:600; margin-top:6px; min-height:16px; }
+        .pw-match.ok  { color:var(--green); }
+        .pw-match.err { color:var(--red); }
+
+        .danger-card { background:#fff5f5; border-radius:18px; border:1.5px solid #fecaca; padding:28px; margin-bottom:16px; }
+        .danger-card .card-title { color:#dc2626; }
+        .danger-desc { font-size:13px; color:#9a3412; line-height:1.7; margin-bottom:18px; }
+        .danger-desc ul { margin-left:16px; margin-top:6px; }
+        .danger-desc li { margin-bottom:4px; }
+        .btn-danger { padding:11px 24px; background:#dc2626; color:white; border:none; border-radius:10px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; }
+        .btn-danger:hover { background:#b91c1c; }
+
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; display:flex; align-items:center; justify-content:center; opacity:0; visibility:hidden; transition:all .25s; }
+        .modal-overlay.open { opacity:1; visibility:visible; }
+        .modal { background:white; border-radius:18px; padding:32px; width:min(440px,90vw); box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+        .modal-title { font-size:18px; font-weight:800; color:#dc2626; margin-bottom:10px; }
+        .modal-desc { font-size:14px; color:var(--text-sub); line-height:1.7; margin-bottom:20px; }
+        .modal-input-label { font-size:12.5px; font-weight:700; color:var(--text); margin-bottom:7px; }
+        .modal-input { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; outline:none; transition:border .2s; }
+        .modal-input:focus { border-color:#dc2626; }
+        .modal-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+        .btn-cancel { padding:10px 20px; background:var(--bg); color:var(--text-sub); border:1.5px solid var(--border); border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+        @media(max-width:640px){
+            header{padding:0 16px}
+            .container{padding:0 16px}
+            .field-row{grid-template-columns:1fr}
+            .user-chip{display:none}
+        }
+    </style>
+</head>
+<body>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        <div class="drawer-logo">JOBMATE</div>
+        <div class="drawer-user">
+            <div class="drawer-avatar" id="drawerAvatar">?</div>
+            <div>
+                <div class="drawer-user-name" id="drawerUserName">불러오는 중...</div>
+                <div class="drawer-user-sub">로그인됨</div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="drawer-nav">
+        <div class="drawer-section-label">메인 메뉴</div>
+
+        <a class="drawer-item" href="/dashboard">
+            <div class="item-icon blue">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+            </div>
+            <div class="item-text">
+                <div>대시보드</div>
+                <div class="item-desc">홈 화면으로 이동</div>
+            </div>
+        </a>
+
+        <a class="drawer-item" href="/jobs">
+            <div class="item-icon green">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+            </div>
+            <div class="item-text">
+                <div>공고 매칭</div>
+                <div class="item-desc">맞춤 채용공고 확인</div>
+            </div>
+        </a>
+
+        <a class="drawer-item" href="/community">
+            <div class="item-icon indigo">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+            </div>
+            <div class="item-text">
+                <div>커뮤니티</div>
+                <div class="item-desc">개발자들과 소통하기</div>
+            </div>
+        </a>
+
+        <a class="drawer-item" href="/interview">
+            <div class="item-icon yellow">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <div class="item-text">
+                <div>면접 코칭</div>
+                <div class="item-desc">AI 면접 질문 & 피드백</div>
+            </div>
+        </a>
+
+        <a class="drawer-item" href="/interview-notes">
+            <div class="item-icon note">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+            </div>
+            <div class="item-text">
+                <div>면접 오답노트</div>
+                <div class="item-desc">질문·피드백 복습</div>
+            </div>
+        </a>
+
+        <a class="drawer-item" href="/dashboard" onclick="sessionStorage.setItem('openCalendar','1'); return true;">
+            <div class="item-icon" style="background:#ccfbf1">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            </div>
+
+        </a>
+
+        <a class="drawer-item" href="/profile-setup">
+            <div class="item-icon purple">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                </svg>
+            </div>
+            <div class="item-text">
+                <div>맞춤 정보 설정</div>
+                <div class="item-desc">직무·기술스택·지역·연봉 설정</div>
+            </div>
+        </a>
+
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">설정</div>
+
+        <a class="drawer-item active" href="/account">
+            <div class="item-icon orange">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            <div class="item-text">
+                <div>계정 관리</div>
+                <div class="item-desc">비밀번호·개인정보 변경</div>
+            </div>
+        </a>
+    </nav>
+
+    <div class="drawer-footer">
+        <button class="btn-logout-drawer" onclick="logout()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            로그아웃
+        </button>
+    </div>
+</div>
+
+<header>
+    <a class="logo" href="/dashboard">JOBMATE</a>
+    <div class="header-right">
+        <div class="user-chip">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <span class="user-name" id="userName"></span>
+        </div>
+        <div class="hamburger" id="hamburger" onclick="toggleDrawer()">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="page-title">
+        <h2>계정 관리</h2>
+        <p>개인정보, 비밀번호, 닉네임을 변경하고 계정을 관리하세요.</p>
+    </div>
+
+    <div class="account-card">
+        <div class="card-title">
+            <div class="card-title-icon" style="background:#dbeafe">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            기본 정보
+        </div>
+        <div class="field-row">
+            <div class="field-group">
+                <label>생년월일</label>
+                <input type="date" id="birthDate">
+            </div>
+            <div class="field-group">
+                <label>전화번호</label>
+                <input type="tel" id="phone" placeholder="010-0000-0000">
+            </div>
+        </div>
+        <div class="field-group">
+            <label>기본 주소</label>
+            <input type="text" id="address" placeholder="기본 출발지 주소를 입력하세요">
+        </div>
+        <button class="btn-save" onclick="savePersonalInfo()">저장</button>
+        <div class="status-msg" id="personalMsg"></div>
+    </div>
+
+    <div class="account-card">
+        <div class="card-title">
+            <div class="card-title-icon" style="background:#f3e8ff">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+            </div>
+            닉네임 변경
+        </div>
+        <div class="field-group">
+            <label>닉네임 <span style="font-size:11px;color:var(--text-sub);font-weight:400;">(커뮤니티에 표시되는 이름)</span></label>
+            <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="20">
+        </div>
+        <button class="btn-save purple" onclick="saveNickname()">변경</button>
+        <div class="status-msg" id="nicknameMsg"></div>
+    </div>
+
+    <div class="account-card">
+        <div class="card-title">
+            <div class="card-title-icon" style="background:#dcfce7">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            비밀번호 변경
+        </div>
+        <div class="field-group">
+            <label>현재 비밀번호</label>
+            <input type="password" id="currentPw" placeholder="현재 비밀번호">
+        </div>
+        <div class="field-group">
+            <label>새 비밀번호</label>
+            <input type="password" id="newPw" placeholder="새 비밀번호 (8자 이상)" oninput="checkPwMatch()">
+        </div>
+        <div class="field-group">
+            <label>새 비밀번호 확인</label>
+            <input type="password" id="newPw2" placeholder="새 비밀번호 확인" oninput="checkPwMatch()">
+            <div class="pw-match" id="pwMatch"></div>
+        </div>
+        <button class="btn-save" style="background:#16a34a" onclick="changePassword()">변경</button>
+        <div class="status-msg" id="pwMsg"></div>
+    </div>
+
+    <div class="danger-card">
+        <div class="card-title">
+            <div class="card-title-icon" style="background:#fee2e2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/>
+                    <path d="M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+            </div>
+            회원 탈퇴
+        </div>
+        <div class="danger-desc">
+            탈퇴 시 아래 데이터가 <strong>모두 삭제</strong>되며 복구할 수 없습니다.
+            <ul>
+                <li>프로필 및 개인정보</li>
+                <li>지원 현황 및 기록</li>
+                <li>커뮤니티 작성 글 및 댓글</li>
+            </ul>
+        </div>
+        <button class="btn-danger" onclick="openWithdrawModal()">회원 탈퇴</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="withdrawModal" onclick="if(event.target===this)closeWithdrawModal()">
+    <div class="modal">
+        <div class="modal-title">정말 탈퇴하시겠습니까?</div>
+        <div class="modal-desc">탈퇴하면 모든 데이터가 삭제되며 <strong>복구할 수 없습니다.</strong><br>계속하려면 현재 비밀번호를 입력해주세요.</div>
+        <div class="modal-input-label">현재 비밀번호</div>
+        <input class="modal-input" type="password" id="withdrawPw" placeholder="현재 비밀번호 입력">
+        <div class="status-msg" id="withdrawMsg" style="margin-top:10px;"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeWithdrawModal()">취소</button>
+            <button class="btn-danger" onclick="withdraw()">탈퇴하기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let memberId = null;
+    let currentLatitude = null;
+    let currentLongitude = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/api/members/me');
+            if (!res.ok) { location.href = '/'; return; }
+
+            const data = await res.json();
+            memberId = data.id;
+
+            const name = data.name || data.email || '사용자';
+            document.getElementById('userName').textContent = name + '님';
+            document.getElementById('userAvatar').textContent = name.charAt(0);
+            document.getElementById('drawerUserName').textContent = name + '님';
+            document.getElementById('drawerAvatar').textContent = name.charAt(0);
+
+            if (data.birthDate) document.getElementById('birthDate').value = data.birthDate;
+            if (data.phone) document.getElementById('phone').value = data.phone;
+            if (data.nickname) document.getElementById('nickname').value = data.nickname;
+            if (data.address) document.getElementById('address').value = data.address;
+
+            currentLatitude = data.latitude ?? null;
+            currentLongitude = data.longitude ?? null;
+        } catch {
+            location.href = '/';
+        }
+    });
+
+    function checkPwMatch() {
+        const pw = document.getElementById('newPw').value;
+        const pw2 = document.getElementById('newPw2').value;
+        const el = document.getElementById('pwMatch');
+
+        if (!pw2) {
+            el.textContent = '';
+            el.className = 'pw-match';
+            return;
+        }
+
+        if (pw === pw2) {
+            el.textContent = '✅ 비밀번호가 일치합니다';
+            el.className = 'pw-match ok';
+        } else {
+            el.textContent = '❌ 비밀번호가 일치하지 않습니다';
+            el.className = 'pw-match err';
+        }
+    }
+
+    function showMsg(id, text, isOk) {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.className = 'status-msg ' + (isOk ? 'ok' : 'err');
+        setTimeout(() => { el.className = 'status-msg'; }, 4000);
+    }
+
+    async function geocodeAddress(address) {
+        if (!address) {
+            return { latitude: null, longitude: null, address: '' };
+        }
+
+        const res = await fetch('/api/members/geocode?address=' + encodeURIComponent(address));
+        if (!res.ok) {
+            throw new Error('지오코딩 실패');
+        }
+
+        const data = await res.json();
+
+        return {
+            latitude: data.lat ?? null,
+            longitude: data.lng ?? null,
+            address: data.address ?? address
+        };
+    }
+
+    async function savePersonalInfo() {
+        const birthDate = document.getElementById('birthDate').value;
+        const phone = document.getElementById('phone').value.trim();
+        const rawAddress = document.getElementById('address').value.trim();
+
+        try {
+            let latitude = null;
+            let longitude = null;
+            let finalAddress = rawAddress;
+
+            if (rawAddress) {
+                const geo = await geocodeAddress(rawAddress);
+                latitude = geo.latitude;
+                longitude = geo.longitude;
+                finalAddress = geo.address || rawAddress;
+                document.getElementById('address').value = finalAddress;
+            }
+
+            const res = await fetch('/api/members/' + memberId + '/personal-info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    birthDate,
+                    phone,
+                    address: finalAddress,
+                    latitude,
+                    longitude
+                })
+            });
+
+            if (res.ok) {
+                currentLatitude = latitude;
+                currentLongitude = longitude;
+                showMsg('personalMsg', '✅ 개인정보가 저장되었습니다.', true);
+            } else {
+                showMsg('personalMsg', '❌ 저장 중 오류가 발생했습니다.', false);
+            }
+        } catch {
+            showMsg('personalMsg', '❌ 오류가 발생했습니다.', false);
+        }
+    }
+
+    async function saveNickname() {
+        const nickname = document.getElementById('nickname').value.trim();
+
+        if (!nickname) {
+            showMsg('nicknameMsg', '❌ 닉네임을 입력해주세요.', false);
+            return;
+        }
+
+        if (nickname.length < 2) {
+            showMsg('nicknameMsg', '❌ 닉네임은 2자 이상이어야 합니다.', false);
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/members/' + memberId + '/nickname', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nickname })
+            });
+
+            const data = await res.json();
+
+            if (data.success) showMsg('nicknameMsg', '✅ 닉네임이 변경되었습니다.', true);
+            else showMsg('nicknameMsg', '❌ ' + (data.message || '오류가 발생했습니다.'), false);
+        } catch {
+            showMsg('nicknameMsg', '❌ 오류가 발생했습니다.', false);
+        }
+    }
+
+    async function changePassword() {
+        const currentPw = document.getElementById('currentPw').value;
+        const newPw = document.getElementById('newPw').value;
+        const newPw2 = document.getElementById('newPw2').value;
+
+        if (!currentPw || !newPw || !newPw2) {
+            showMsg('pwMsg', '❌ 모든 항목을 입력해주세요.', false);
+            return;
+        }
+
+        if (newPw.length < 8) {
+            showMsg('pwMsg', '❌ 새 비밀번호는 8자 이상이어야 합니다.', false);
+            return;
+        }
+
+        if (newPw !== newPw2) {
+            showMsg('pwMsg', '❌ 새 비밀번호가 일치하지 않습니다.', false);
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/members/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                showMsg('pwMsg', '✅ 비밀번호가 변경되었습니다.', true);
+                document.getElementById('currentPw').value = '';
+                document.getElementById('newPw').value = '';
+                document.getElementById('newPw2').value = '';
+                document.getElementById('pwMatch').textContent = '';
+                document.getElementById('pwMatch').className = 'pw-match';
+            } else {
+                showMsg('pwMsg', '❌ ' + (data.message || '현재 비밀번호가 틀렸습니다.'), false);
+            }
+        } catch {
+            showMsg('pwMsg', '❌ 오류가 발생했습니다.', false);
+        }
+    }
+
+    function openWithdrawModal() {
+        document.getElementById('withdrawModal').classList.add('open');
+    }
+
+    function closeWithdrawModal() {
+        document.getElementById('withdrawModal').classList.remove('open');
+        document.getElementById('withdrawPw').value = '';
+        document.getElementById('withdrawMsg').className = 'status-msg';
+    }
+
+    async function withdraw() {
+        const pw = document.getElementById('withdrawPw').value;
+
+        if (!pw) {
+            const el = document.getElementById('withdrawMsg');
+            el.textContent = '❌ 비밀번호를 입력해주세요.';
+            el.className = 'status-msg err';
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/members/withdraw', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pw })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
+                location.href = '/';
+            } else {
+                const el = document.getElementById('withdrawMsg');
+                el.textContent = '❌ ' + (data.message || '비밀번호가 틀렸습니다.');
+                el.className = 'status-msg err';
+            }
+        } catch {
+            const el = document.getElementById('withdrawMsg');
+            el.textContent = '❌ 오류가 발생했습니다.';
+            el.className = 'status-msg err';
+        }
+    }
+
+    function toggleDrawer() {
+        document.getElementById('drawer').classList.contains('open') ? closeDrawer() : openDrawer();
+    }
+
+    function openDrawer() {
+        document.getElementById('drawer').classList.add('open');
+        document.getElementById('drawerOverlay').classList.add('open');
+        document.getElementById('hamburger').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+        document.getElementById('drawer').classList.remove('open');
+        document.getElementById('drawerOverlay').classList.remove('open');
+        document.getElementById('hamburger').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            closeDrawer();
+            closeWithdrawModal();
+        }
+    });
+
+    async function logout() {
+        await fetch('/api/members/logout', { method:'POST' });
+        location.href = '/';
+    }
+</script>
+</body>
+</html>

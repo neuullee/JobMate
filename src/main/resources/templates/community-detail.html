@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>JobMate - 게시글</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --navy:#0f2340; --blue:#2563eb; --bg:#f0f4f8; --card:#ffffff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0; --red:#dc2626; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Pretendard',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+        .navbar { background:var(--navy); height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; position:sticky; top:0; z-index:100; }
+        .nav-logo { color:#fff; font-size:18px; font-weight:800; letter-spacing:2px; text-decoration:none; }
+        .nav-back { color:#fff; background:none; border:none; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .main { max-width:760px; margin:0 auto; padding:24px 16px; }
+        .card { background:var(--card); border-radius:14px; padding:28px; box-shadow:0 1px 4px rgba(0,0,0,.06); margin-bottom:16px; }
+        .post-category { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; background:#eff6ff; color:var(--blue); display:inline-block; margin-bottom:12px; }
+        .post-title { font-size:22px; font-weight:800; margin-bottom:12px; }
+        .post-meta { display:flex; gap:16px; font-size:13px; color:var(--muted); margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+        .post-content { font-size:15px; line-height:1.8; white-space:pre-wrap; margin-bottom:20px; }
+        .post-tags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+        .tag { background:#f1f5f9; padding:4px 10px; border-radius:12px; font-size:12px; color:var(--muted); }
+        .post-actions { display:flex; gap:10px; align-items:center; }
+        .btn-like { background:none; border:1px solid var(--border); border-radius:20px; padding:6px 16px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .btn-like.liked { background:#fff0f0; border-color:#fca5a5; color:var(--red); }
+        .btn-delete { background:none; border:1px solid #fca5a5; border-radius:20px; padding:6px 16px; font-size:13px; cursor:pointer; color:var(--red); }
+        .btn-back { background:none; border:1px solid var(--border); border-radius:20px; padding:6px 16px; font-size:13px; cursor:pointer; color:var(--muted); }
+        .comment-section { background:var(--card); border-radius:14px; padding:24px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+        .comment-title { font-size:16px; font-weight:700; margin-bottom:16px; }
+        .comment-form { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+        .comment-input { padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; resize:vertical; min-height:80px; }
+        .comment-input:focus { outline:none; border-color:var(--blue); }
+        .comment-form-bottom { display:flex; justify-content:space-between; align-items:center; }
+        .comment-anon { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer; }
+        .btn-comment-submit { background:var(--navy); color:#fff; border:none; border-radius:10px; padding:8px 20px; font-size:13px; font-weight:600; cursor:pointer; }
+        .comment-item { padding:14px 0; border-bottom:1px solid var(--border); }
+        .comment-item:last-child { border-bottom:none; }
+        .comment-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+        .comment-author { font-size:13px; font-weight:600; }
+        .comment-time { font-size:12px; color:var(--muted); }
+        .comment-content { font-size:14px; line-height:1.6; }
+        .btn-comment-delete { background:none; border:none; font-size:12px; color:var(--muted); cursor:pointer; padding:2px 6px; }
+        .btn-comment-delete:hover { color:var(--red); }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a class="nav-logo" href="/dashboard">JOBMATE</a>
+    <button class="nav-back" onclick="history.back()">← 목록으로</button>
+</nav>
+
+<main class="main">
+    <div class="card" id="post-card">
+        <div style="text-align:center;padding:40px;color:var(--muted)">불러오는 중...</div>
+    </div>
+    <div class="comment-section">
+        <div class="comment-title">💬 댓글 <span id="comment-count">0</span>개</div>
+        <div class="comment-form">
+            <textarea class="comment-input" id="comment-input" placeholder="댓글을 입력하세요..."></textarea>
+            <div class="comment-form-bottom">
+                <label class="comment-anon">
+                    <input type="checkbox" id="comment-anon-check"> 익명으로 작성
+                </label>
+                <button class="btn-comment-submit" onclick="submitComment()">댓글 작성</button>
+            </div>
+        </div>
+        <div id="comment-list"></div>
+    </div>
+</main>
+
+<script>
+    const postId = location.pathname.split('/').pop();
+    let isOwner = false;
+    let liked = false;
+
+    function timeAgo(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+        const diff = (Date.now() - date) / 1000;
+        if (diff < 60) return '방금 전';
+        if (diff < 3600) return Math.floor(diff/60) + '분 전';
+        if (diff < 86400) return Math.floor(diff/3600) + '시간 전';
+        if (diff < 2592000) return Math.floor(diff/86400) + '일 전';
+        return date.toLocaleDateString('ko-KR');
+    }
+
+    async function loadPost() {
+        const r = await fetch(`/api/posts/${postId}`);
+        if (!r.ok) { document.getElementById('post-card').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">게시글을 찾을 수 없습니다.</div>'; return; }
+        const p = await r.json();
+        isOwner = p.isOwner;
+        liked = p.liked;
+
+        const tags = (p.tags || '').split(',').filter(t => t.trim());
+        document.getElementById('post-card').innerHTML = `
+            <span class="post-category">${p.category || '자유게시판'}</span>
+            <div class="post-title">${p.title}</div>
+            <div class="post-meta">
+                <span>👤 ${p.author || '익명'}</span>
+                <span>🕐 ${timeAgo(p.createdAt)}</span>
+                <span>👁 ${p.viewCount || 0}</span>
+                <span>❤️ <span id="like-count">${p.likeCount || 0}</span></span>
+            </div>
+            <div class="post-content">${p.content}</div>
+            ${tags.length ? `<div class="post-tags">${tags.map(t => `<span class="tag">#${t.trim()}</span>`).join('')}</div>` : ''}
+            <div class="post-actions">
+                <button class="btn-like ${liked ? 'liked' : ''}" id="btn-like" onclick="toggleLike()">❤️ 좋아요</button>
+                <button class="btn-back" onclick="location.href='/community'">← 목록</button>
+                ${isOwner ? `<button class="btn-delete" onclick="deletePost()">삭제</button>` : ''}
+            </div>
+        `;
+    }
+
+    async function loadComments() {
+        const r = await fetch(`/api/posts/${postId}/comments`);
+        if (!r.ok) return;
+        const comments = await r.json();
+        document.getElementById('comment-count').textContent = comments.length;
+        const el = document.getElementById('comment-list');
+        if (!comments.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">첫 댓글을 작성해보세요!</div>'; return; }
+        el.innerHTML = comments.map(c => `
+            <div class="comment-item">
+                <div class="comment-meta">
+                    <span class="comment-author">👤 ${c.author || '익명'}</span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="comment-time">${timeAgo(c.createdAt)}</span>
+                        ${c.isOwner ? `<button class="btn-comment-delete" onclick="deleteComment(${c.id})">삭제</button>` : ''}
+                    </div>
+                </div>
+                <div class="comment-content">${c.content}</div>
+            </div>
+        `).join('');
+    }
+
+    async function toggleLike() {
+        const r = await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+        if (!r.ok) return;
+        const data = await r.json();
+        liked = data.liked;
+        document.getElementById('btn-like').className = `btn-like ${liked ? 'liked' : ''}`;
+        document.getElementById('like-count').textContent = data.likeCount;
+    }
+
+    async function submitComment() {
+        const content = document.getElementById('comment-input').value.trim();
+        if (!content) { alert('댓글 내용을 입력해주세요.'); return; }
+        const anonymous = document.getElementById('comment-anon-check').checked;
+        const r = await fetch(`/api/posts/${postId}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, anonymous })
+        });
+        if (r.ok) {
+            document.getElementById('comment-input').value = '';
+            await loadComments();
+        } else {
+            alert('댓글 작성에 실패했습니다. 로그인이 필요합니다.');
+        }
+    }
+
+    async function deleteComment(commentId) {
+        if (!confirm('댓글을 삭제하시겠습니까?')) return;
+        const r = await fetch(`/api/posts/comments/${commentId}`, { method: 'DELETE' });
+        if (r.ok) await loadComments();
+    }
+
+    async function deletePost() {
+        if (!confirm('게시글을 삭제하시겠습니까?')) return;
+        const r = await fetch(`/api/posts/${postId}`, { method: 'DELETE' });
+        if (r.ok) location.href = '/community';
+        else alert('삭제에 실패했습니다.');
+    }
+
+    loadPost();
+    loadComments();
+</script>
+</body>
+</html>

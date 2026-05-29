@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 맞춤 공고</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #1e3a5f; --navy2: #162d4a; --navy-light: #2a4f80;
+            --accent: #3b82f6; --bluegray: #9aa5b4;
+            --bg: #f0f4f8; --surface: #ffffff;
+            --border: #d6e0ec; --text: #1a2a3a; --text-sub: #6b7f96;
+            --green: #16a34a; --yellow: #b45309; --red: #dc2626;
+            --radius: 14px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Pretendard', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        header { background: linear-gradient(135deg, var(--navy2) 0%, var(--navy) 100%); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 20px rgba(30,58,95,0.3); }
+        header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+        .logo { color: white; font-size: 1.3rem; font-weight: 800; letter-spacing: 4px; text-decoration: none; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .user-chip { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:100px; padding:6px 14px; }
+        .user-avatar { width:26px; height:26px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; }
+        .user-name { color:#e2eaf4; font-size:13px; font-weight:500; }
+        .hamburger { width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; transition:background .2s; }
+        .hamburger:hover { background:rgba(255,255,255,0.2); }
+        .hamburger span { display:block; width:18px; height:2px; background:white; border-radius:2px; transition:all .3s; }
+        .hamburger.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+        .hamburger.open span:nth-child(2) { opacity:0; transform:scaleX(0); }
+        .hamburger.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+
+        .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:300; opacity:0; visibility:hidden; transition:all .3s; }
+        .drawer-overlay.open { opacity:1; visibility:visible; }
+        .drawer { position:fixed; top:0; right:-320px; width:300px; height:100vh; background:white; z-index:400; display:flex; flex-direction:column; transition:right .35s cubic-bezier(0.34,1.56,0.64,1); box-shadow:-8px 0 40px rgba(0,0,0,0.15); }
+        .drawer.open { right:0; }
+        .drawer-header { background:linear-gradient(135deg,var(--navy2),var(--navy)); padding:24px 24px 20px; position:relative; flex-shrink:0; }
+        .drawer-header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+        .drawer-logo { color:white; font-size:1.1rem; font-weight:900; letter-spacing:4px; margin-bottom:16px; }
+        .drawer-user { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.1); border-radius:10px; padding:10px 14px; }
+        .drawer-avatar { width:38px; height:38px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:white; flex-shrink:0; }
+        .drawer-user-name { color:white; font-size:14px; font-weight:700; }
+        .drawer-user-sub { color:rgba(255,255,255,0.6); font-size:11px; margin-top:2px; }
+        .drawer-close { position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,0.15); border:none; color:white; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+        .drawer-close:hover { background:rgba(255,255,255,0.3); }
+        .drawer-nav { flex:1; padding:12px; overflow-y:auto; }
+        .drawer-section-label { font-size:10px; font-weight:700; color:var(--text-sub); letter-spacing:2px; text-transform:uppercase; padding:10px 12px 6px; }
+        .drawer-item { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; font-size:14px; font-weight:600; color:var(--text); cursor:pointer; text-decoration:none; transition:all .2s; margin-bottom:2px; }
+        .drawer-item:hover { background:#f0f4f8; color:var(--navy); }
+        .drawer-item.active { background:#eef4ff; color:var(--navy); }
+        .item-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+        .item-text{flex:1} .item-desc{font-size:11px;color:var(--text-sub);font-weight:400;margin-top:1px;}
+        .drawer-divider { height:1px; background:var(--border); margin:8px 12px; }
+        .drawer-footer { padding:16px 12px; border-top:1px solid var(--border); flex-shrink:0; }
+        .btn-logout-drawer { width:100%; padding:12px; border-radius:12px; background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .btn-logout-drawer:hover { background:#fecaca; }
+
+        main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+        .page-title { margin-bottom: 24px; }
+        .page-title h1 { font-size: 24px; font-weight: 800; color: var(--navy); }
+        .page-title p { margin-top: 6px; font-size: 14px; color: var(--text-sub); }
+        .page-title span { color: var(--navy); font-weight: 700; }
+
+        .search-wrap { display: flex; gap: 8px; margin-bottom: 16px; }
+        .search-input-box { flex: 1; display: flex; align-items: center; gap: 8px; background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 16px; transition: border-color .2s; }
+        .search-input-box:focus-within { border-color: var(--navy); }
+        .search-input-box svg { flex-shrink: 0; color: var(--text-sub); }
+        .search-input-box input { flex: 1; border: none; outline: none; font-size: 14px; font-family: inherit; color: var(--text); background: transparent; }
+        .search-input-box input::placeholder { color: var(--text-sub); }
+        .btn-search-clear { background: none; border: none; cursor: pointer; color: var(--text-sub); font-size: 16px; padding: 0; line-height: 1; display: none; }
+
+        .filter-panel { background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+        .filter-group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .filter-group-label { font-size: 11px; font-weight: 700; color: var(--text-sub); letter-spacing: 0.5px; text-transform: uppercase; }
+        .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .filter-chip { padding: 5px 14px; border-radius: 100px; border: 1.5px solid var(--border); background: white; color: var(--text-sub); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .18s; font-family: inherit; }
+        .filter-chip:hover { border-color: var(--navy); color: var(--navy); }
+        .filter-chip.active { background: var(--navy); border-color: var(--navy); color: white; }
+        .filter-divider { width: 1px; background: var(--border); align-self: stretch; }
+
+        .list-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+        .list-count { font-size: 14px; color: var(--text-sub); }
+        .list-count strong { color: var(--text); font-weight: 700; }
+        .list-meta-right { display: flex; align-items: center; gap: 10px; }
+        .sort-select { padding: 7px 14px; border-radius: 8px; border: 1.5px solid var(--border); background: white; color: var(--text); font-size: 13px; font-family: inherit; cursor: pointer; outline: none; }
+        .btn-reset-filter { padding: 7px 14px; border-radius: 8px; border: 1.5px solid var(--border); background: white; color: var(--text-sub); font-size: 13px; font-family: inherit; cursor: pointer; display: none; transition: all .2s; }
+        .btn-reset-filter:hover { border-color: var(--red); color: var(--red); }
+        .btn-reset-filter.visible { display: block; }
+
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+        .job-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 22px; cursor: pointer; transition: transform .22s, border-color .22s, box-shadow .22s; position: relative; overflow: hidden; animation: fadeUp .35s ease both; }
+        .job-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--navy); opacity:0; transition:opacity .22s; }
+        .job-card:hover { transform: translateY(-4px); border-color: var(--navy); box-shadow: 0 10px 32px rgba(30,58,95,0.12); }
+        .job-card:hover::before { opacity: 1; }
+        .card-rank { position:absolute; top:18px; right:18px; width:28px; height:28px; border-radius:8px; background:var(--bg); border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--text-sub); }
+        .card-rank.top3 { background:var(--navy); border-color:var(--navy); color:white; }
+        .btn-bookmark { position:absolute; top:18px; right:54px; width:28px; height:28px; border-radius:8px; background:var(--bg); border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; transition:all .2s; z-index:2; }
+        .btn-bookmark:hover { background:#fef3c7; border-color:#f59e0b; }
+        .btn-bookmark.bookmarked { background:#fef3c7; border-color:#f59e0b; }
+        .score-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:100px; font-size:12px; font-weight:700; margin-bottom:12px; }
+        .score-badge .dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+        .score-badge.high { background:#dcfce7; color:var(--green); border:1px solid #bbf7d0; }
+        .score-badge.mid  { background:#fef3c7; color:var(--yellow); border:1px solid #fde68a; }
+        .score-badge.low  { background:#fee2e2; color:var(--red); border:1px solid #fecaca; }
+        .card-company { font-size:12px; color:var(--text-sub); font-weight:500; margin-bottom:5px; }
+        .card-title { font-size:15px; font-weight:700; line-height:1.4; margin-bottom:12px; color:var(--text); }
+        .deadline-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; margin-bottom:10px; }
+        .deadline-badge.urgent { background:#fee2e2; color:#dc2626; border:1px solid #fecaca; }
+        .deadline-badge.soon   { background:#fff7ed; color:#b45309; border:1px solid #fed7aa; }
+        .card-company-stats { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+        .stat-chip { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:600; border:1px solid var(--border); background:#f8fbff; color:var(--text-sub); }
+        .stat-chip strong { color:var(--text); margin-left:4px; }
+        .stat-chip.size-large  { background:#eef4ff; border-color:#c7d9f8; color:#1d4ed8; }
+        .stat-chip.size-mid    { background:#f0fdf4; border-color:#bbf7d0; color:#16a34a; }
+        .stat-chip.size-small  { background:#fef9ee; border-color:#fde68a; color:#b45309; }
+        .stat-chip.size-start  { background:#fdf4ff; border-color:#e9d5ff; color:#7c3aed; }
+        .card-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+        .tag { padding:3px 9px; border-radius:6px; background:var(--bg); border:1px solid var(--border); font-size:11px; color:var(--text-sub); font-weight:500; }
+        .tag.match { background:#e8f0fb; border-color:#b8d0f0; color:var(--navy); font-weight:600; }
+        .leave-warning { font-size:12px; line-height:1.6; padding:9px 12px; background:#fff7ed; border-radius:8px; border-left:3px solid #f59e0b; color:#9a6700; margin-bottom:8px; }
+        .match-reason-box { margin-bottom: 8px; padding: 10px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); }
+        .match-reason-items { display: flex; flex-direction: column; gap: 6px; }
+        .match-reason-item { display: flex; align-items: center; gap: 8px; }
+        .mr-label { font-size: 10px; color: var(--text-sub); font-weight: 700; min-width: 44px; letter-spacing: 0.3px; text-transform: uppercase; }
+        .mr-bar-wrap { flex: 1; height: 3px; background: #e2e8f0; border-radius: 100px; overflow: hidden; }
+        .mr-bar { height: 100%; border-radius: 100px; transition: width .8s ease; }
+        .mr-score { font-size: 10px; font-weight: 700; color: var(--text-sub); min-width: 24px; text-align: right; }
+        .card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); gap:10px; }
+        .card-location { font-size:12px; color:var(--text-sub); }
+        .btn-apply { padding:6px 16px; background:var(--navy); color:white; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; transition:background .2s; }
+        .btn-apply:hover { background:var(--navy-light); }
+        .highlight { background: #fef08a; border-radius: 2px; font-weight: 700; }
+        #loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 0; gap:16px; color:var(--text-sub); font-size:14px; }
+        .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--navy); border-radius:50%; animation:spin .7s linear infinite; }
+        #empty-state { display:none; text-align:center; padding:80px 0; color:var(--text-sub); }
+        #empty-state p { font-size:15px; line-height:1.7; }
+        #empty-state a { display:inline-block; margin-top:20px; padding:10px 24px; background:var(--navy); border-radius:10px; color:white; text-decoration:none; font-weight:700; font-size:14px; }
+        .popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .25s;backdrop-filter:blur(4px);}
+        .popup-overlay.open{opacity:1;visibility:visible;}
+        .popup{background:#fff;border-radius:20px;padding:36px 32px;width:min(480px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center;}
+        .popup-icon{font-size:48px;margin-bottom:12px;}
+        .popup-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:8px;}
+        .popup-desc{font-size:14px;color:var(--text-sub);line-height:1.7;margin-bottom:24px;}
+        .popup-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px;}
+        .popup-chip{padding:7px 16px;border:1.5px solid var(--border);border-radius:100px;cursor:pointer;font-size:13px;color:var(--text-sub);transition:all .2s;background:white;font-weight:500;font-family:inherit;}
+        .popup-chip:hover{border-color:var(--navy);color:var(--navy);}
+        .popup-chip.selected{background:var(--navy);border-color:var(--navy);color:white;font-weight:700;}
+        .btn-popup-main{width:100%;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;transition:all .2s;}
+        .btn-popup-main:hover{background:var(--navy-light);}
+        .btn-popup-sub{width:100%;padding:11px;background:transparent;color:#4a6480;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+        .btn-popup-sub:hover{border-color:#a8bfd4;background:#f7fafc;}
+        @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        @media(max-width:640px){
+            header{padding:0 16px} main{padding:24px 16px 60px}
+            .cards-grid{grid-template-columns:1fr} .list-meta{flex-direction:column;align-items:flex-start;}
+            .user-chip{display:none;} .filter-panel{gap:12px;} .filter-divider{display:none;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        <div class="drawer-logo">JOBMATE</div>
+        <div class="drawer-user">
+            <div class="drawer-avatar" id="drawerAvatar">?</div>
+            <div>
+                <div class="drawer-user-name" id="drawerUserName">불러오는 중...</div>
+                <div class="drawer-user-sub">로그인됨</div>
+            </div>
+        </div>
+    </div>
+    <nav class="drawer-nav">
+        <div class="drawer-section-label">메인 메뉴</div>
+        <a class="drawer-item" href="/dashboard"><div class="item-icon blue" style="background:#dbeafe"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div class="item-text"><div>대시보드</div><div class="item-desc">홈 화면으로 이동</div></div></a>
+        <a class="drawer-item active" href="/jobs"><div class="item-icon green" style="background:#dcfce7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="item-text"><div>공고 매칭</div><div class="item-desc">맞춤 채용공고 확인</div></div></a>
+        <a class="drawer-item" href="/community"><div class="item-icon indigo" style="background:#e0e7ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="item-text"><div>커뮤니티</div><div class="item-desc">개발자들과 소통하기</div></div></a>
+        <a class="drawer-item" href="/interview"><div class="item-icon yellow" style="background:#fef3c7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="item-text"><div>면접 코칭</div><div class="item-desc">AI 면접 질문 &amp; 피드백</div></div></a>
+        <a class="drawer-item" href="/interview-notes"><div class="item-icon note" style="background:#f5f3ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div><div class="item-text"><div>면접 오답노트</div><div class="item-desc">면접 질문·피드백 복습</div></div></a>
+        <a class="drawer-item" href="/cover-letter"><div class="item-icon teal" style="background:#ccfbf1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="12" y1="9" x2="8" y2="9"/></svg></div><div class="item-text"><div>이력서 · 자소서 관리</div><div class="item-desc">AI 피드백으로 자소서를 개선하세요</div></div></a>
+        <a class="drawer-item" href="/profile-setup"><div class="item-icon purple" style="background:#f3e8ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div><div class="item-text"><div>맞춤 정보 설정</div><div class="item-desc">직무·기술스택·지역·연봉 설정</div></div></a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">설정</div>
+        <a class="drawer-item" href="/account"><div class="item-icon orange" style="background:#fff7ed"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="item-text"><div>계정 관리</div><div class="item-desc">비밀번호·개인정보 변경</div></div></a>
+    </nav>
+    <div class="drawer-footer">
+        <button class="btn-logout-drawer" onclick="logout()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>로그아웃</button>
+    </div>
+</div>
+
+<header>
+    <a class="logo" href="/dashboard">JOBMATE</a>
+    <div class="header-right">
+        <div class="user-chip">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <span class="user-name" id="userName">불러오는 중...</span>
+        </div>
+        <div class="hamburger" id="hamburger" onclick="toggleDrawer()">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="page-title">
+        <h1>맞춤 채용공고</h1>
+        <p>내 프로필 기반으로 <span id="matchCount">-</span>개의 공고를 분석했습니다</p>
+    </div>
+
+    <div class="search-wrap">
+        <div class="search-input-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="searchInput" placeholder="회사명, 직무, 기술스택으로 검색..." oninput="onSearchInput()" onkeydown="if(event.key==='Escape'){clearSearch()}">
+            <button class="btn-search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+        </div>
+    </div>
+
+    <div class="filter-panel">
+        <div class="filter-group">
+            <div class="filter-group-label">매칭 점수</div>
+            <div class="filter-chips">
+                <button class="filter-chip active" onclick="setFilter('score','all',this)">전체</button>
+                <button class="filter-chip" onclick="setFilter('score','high',this)">높은 매칭 70+</button>
+                <button class="filter-chip" onclick="setFilter('score','mid',this)">중간 40~69</button>
+                <button class="filter-chip" onclick="setFilter('score','low',this)">낮은 매칭 ~39</button>
+            </div>
+        </div>
+        <div class="filter-divider"></div>
+        <div class="filter-group">
+            <div class="filter-group-label">경력</div>
+            <div class="filter-chips">
+                <button class="filter-chip active" onclick="setFilter('type','all',this)">전체</button>
+                <button class="filter-chip" onclick="setFilter('type','신입',this)">신입</button>
+                <button class="filter-chip" onclick="setFilter('type','경력',this)">경력</button>
+                <button class="filter-chip" onclick="setFilter('type','무관',this)">무관</button>
+            </div>
+        </div>
+        <div class="filter-divider"></div>
+        <div class="filter-group">
+            <div class="filter-group-label">즐겨찾기</div>
+            <div class="filter-chips">
+                <button class="filter-chip" id="bookmarkFilterBtn" onclick="toggleBookmarkFilter(this)">★ 찜한 공고만</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="list-meta">
+        <span class="list-count">공고 <strong id="visibleCount">0</strong>개</span>
+        <div class="list-meta-right">
+            <button class="btn-reset-filter" id="resetFilterBtn" onclick="resetAllFilters()">✕ 필터 초기화</button>
+            <select class="sort-select" id="sortSelect" onchange="applyAll()">
+                <option value="score">점수 높은 순</option>
+                <option value="salary">연봉 높은 순</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="loading"><div class="spinner"></div><span>맞춤 공고를 분석하고 있습니다...</span></div>
+    <div id="empty-state">
+        <p>프로필을 먼저 설정해야 맞춤 공고를 확인할 수 있습니다.<br>맞춤 정보 설정 후 다시 시도해 주세요.</p>
+        <a href="/profile-setup">맞춤 정보 설정하기</a>
+    </div>
+    <div class="cards-grid" id="cardsGrid"></div>
+</main>
+
+<div class="popup-overlay" id="stackPopup">
+    <div class="popup">
+        <div class="popup-icon">🔍</div>
+        <div class="popup-title">매칭된 공고가 없어요</div>
+        <div class="popup-desc">기술 스택을 선택하면<br>맞춤 채용공고를 바로 확인할 수 있어요!</div>
+        <div class="popup-chips" id="popupChips">
+            <button class="popup-chip" data-value="Java">Java</button>
+            <button class="popup-chip" data-value="Spring">Spring</button>
+            <button class="popup-chip" data-value="Python">Python</button>
+            <button class="popup-chip" data-value="JavaScript">JavaScript</button>
+            <button class="popup-chip" data-value="TypeScript">TypeScript</button>
+            <button class="popup-chip" data-value="React">React</button>
+            <button class="popup-chip" data-value="Vue">Vue</button>
+            <button class="popup-chip" data-value="Node.js">Node.js</button>
+            <button class="popup-chip" data-value="MySQL">MySQL</button>
+            <button class="popup-chip" data-value="AWS">AWS</button>
+            <button class="popup-chip" data-value="Docker">Docker</button>
+            <button class="popup-chip" data-value="Kotlin">Kotlin</button>
+            <button class="popup-chip" data-value="Go">Go</button>
+        </div>
+        <button class="btn-popup-main" onclick="saveStackFromPopup()">스택 저장하고 공고 보기</button>
+        <button class="btn-popup-sub" onclick="location.href='/profile-setup'">맞춤 정보 설정으로 이동</button>
+    </div>
+</div>
+
+<script>
+    let allJobs = [];
+    let bookmarks = new Set(JSON.parse(localStorage.getItem('jm_bookmarks') || '[]'));
+    let activeFilters = { score: 'all', type: 'all', bookmark: false };
+    let searchKeyword = '';
+
+    function saveBookmarks() { localStorage.setItem('jm_bookmarks', JSON.stringify([...bookmarks])); }
+
+    function toggleBookmark(e, jobId) {
+        e.stopPropagation();
+        bookmarks.has(jobId) ? bookmarks.delete(jobId) : bookmarks.add(jobId);
+        saveBookmarks();
+        const btn = document.querySelector(`.btn-bookmark[data-id="${jobId}"]`);
+        if (btn) btn.classList.toggle('bookmarked', bookmarks.has(jobId));
+        if (activeFilters.bookmark) applyAll();
+    }
+
+    function parseMatchReasons(raw) {
+        if (!raw) return [];
+        return raw.split('|').map(s => s.trim()).filter(Boolean).map(part => {
+            const m = part.match(/(.+?)\((\d+)%,(\d+),(\d+)\)/);
+            if (m) return { name: m[1].trim(), weight: parseInt(m[2]), rawScore: parseInt(m[3]), val: parseInt(m[4]) };
+            return { name: part, weight: 0, rawScore: 0, val: 0 };
+        });
+    }
+
+    function renderMatchReason(raw) {
+        const reasons = parseMatchReasons(raw);
+        if (!reasons.length) return '';
+        const barColors = ['#1e3a5f','#2a4f80','#4a6fa5','#9aa5b4'];
+        const icons = ['💼','🛠','📍','💰'];
+        const itemsHtml = reasons.map((r, i) => {
+            const color = barColors[i % barColors.length];
+            const icon = icons[i % icons.length];
+            const statusIcon = r.val >= 20 ? '✅' : r.val >= 10 ? '🔶' : '❌';
+            return `<div class="match-reason-item">
+            <span class="mr-icon">${icon}</span>
+            <span class="mr-label">${r.name}</span>
+            <div class="mr-bar-wrap"><div class="mr-bar" style="width:${r.rawScore}%;background:${color}"></div></div>
+            <span class="mr-score">${statusIcon} ${r.val}점</span>
+        </div>`;
+        }).join('');
+        return `<div class="match-reason-box"><div class="match-reason-items">${itemsHtml}</div></div>`;
+    }
+
+    function getDeadlineBadge(description) {
+        if (!description) return '';
+        const match = description.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);
+        if (!match) return '';
+        const deadline = new Date(match[1], match[2]-1, match[3]);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const diff = Math.ceil((deadline - today) / (1000*60*60*24));
+        if (diff < 0) return '';
+        if (diff === 0) return `<div class="deadline-badge urgent">오늘 마감</div>`;
+        if (diff <= 3) return `<div class="deadline-badge urgent">D-${diff}</div>`;
+        if (diff <= 7) return `<div class="deadline-badge soon">D-${diff}</div>`;
+        return '';
+    }
+
+    function onSearchInput() {
+        const val = document.getElementById('searchInput').value;
+        searchKeyword = val.trim();
+        document.getElementById('searchClear').style.display = searchKeyword ? 'block' : 'none';
+        checkResetBtn();
+        applyAll();
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        searchKeyword = '';
+        document.getElementById('searchClear').style.display = 'none';
+        checkResetBtn();
+        applyAll();
+    }
+
+    function setFilter(type, value, btn) {
+        activeFilters[type] = value;
+        btn.closest('.filter-chips').querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        checkResetBtn();
+        applyAll();
+    }
+
+    function toggleBookmarkFilter(btn) {
+        activeFilters.bookmark = !activeFilters.bookmark;
+        btn.classList.toggle('active', activeFilters.bookmark);
+        checkResetBtn();
+        applyAll();
+    }
+
+    function checkResetBtn() {
+        const isDirty = activeFilters.score !== 'all' || activeFilters.type !== 'all' || activeFilters.bookmark || searchKeyword;
+        document.getElementById('resetFilterBtn').classList.toggle('visible', !!isDirty);
+    }
+
+    function resetAllFilters() {
+        activeFilters = { score: 'all', type: 'all', bookmark: false };
+        searchKeyword = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchClear').style.display = 'none';
+        document.querySelectorAll('.filter-chips .filter-chip').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.filter-chips').forEach(g => { const first = g.querySelector('.filter-chip'); if(first && (first.textContent === '전체')) first.classList.add('active'); });
+        document.getElementById('bookmarkFilterBtn').classList.remove('active');
+        document.getElementById('resetFilterBtn').classList.remove('visible');
+        applyAll();
+    }
+
+    function highlight(text, keyword) {
+        if (!keyword || !text) return text || '';
+        const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark class="highlight">$1</mark>');
+    }
+
+    function applyAll() {
+        const sortType = document.getElementById('sortSelect').value;
+        let jobs = [...allJobs];
+        if (sortType === 'salary') {
+            jobs.sort((a,b) => { const d = parseSalaryValue(b.job?.salary) - parseSalaryValue(a.job?.salary); return d !== 0 ? d : b.score - a.score; });
+        } else {
+            jobs.sort((a,b) => b.score - a.score);
+        }
+        if (searchKeyword) {
+            const kw = searchKeyword.toLowerCase();
+            jobs = jobs.filter(item => {
+                const j = item.job || {};
+                return (j.company||'').toLowerCase().includes(kw)
+                    || (j.title||'').toLowerCase().includes(kw)
+                    || (j.techStack||'').toLowerCase().includes(kw)
+                    || (j.location||'').toLowerCase().includes(kw)
+                    || (j.jobType||'').toLowerCase().includes(kw);
+            });
+        }
+        if (activeFilters.score !== 'all') {
+            jobs = jobs.filter(item => getScoreLevel(item.score) === activeFilters.score);
+        }
+        if (activeFilters.type !== 'all') {
+            jobs = jobs.filter(item => (item.job?.jobType || '').includes(activeFilters.type));
+        }
+        if (activeFilters.bookmark) {
+            jobs = jobs.filter(item => bookmarks.has(String((item.job||{}).id)));
+        }
+        renderCards(jobs, searchKeyword);
+    }
+
+    function getScoreLevel(score) { return score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low'; }
+    function getScoreLabel(score) { return score >= 70 ? '높은 매칭' : score >= 40 ? '중간 매칭' : '낮은 매칭'; }
+
+    function parseSalaryValue(raw) {
+        if (!raw) return 0;
+        const nums = String(raw).match(/\d+/g);
+        if (!nums) return 0;
+        if (String(raw).includes('~') || String(raw).includes('-')) return Math.max(...nums.map(n => parseInt(n)));
+        return parseInt(nums[0]) || 0;
+    }
+
+    function renderCards(jobs, keyword) {
+        const grid = document.getElementById('cardsGrid');
+        grid.innerHTML = '';
+        document.getElementById('visibleCount').textContent = jobs.length;
+        if (!jobs.length) {
+            const msg = searchKeyword
+                ? `"${searchKeyword}" 검색 결과가 없습니다.`
+                : activeFilters.bookmark
+                    ? '찜한 공고가 없습니다. 공고 카드의 ★ 버튼을 눌러 찜해보세요!'
+                    : '해당 조건의 공고가 없습니다.';
+            grid.innerHTML = `<p style="color:var(--text-sub);font-size:14px;grid-column:1/-1;text-align:center;padding:40px 0;">${msg}</p>`;
+            return;
+        }
+        jobs.forEach((item, idx) => {
+            const job = item.job || {};
+            const jobId = String(job.id);
+            const level = getScoreLevel(item.score);
+            const stacks = (job.techStack || '').split(',').map(s => s.trim()).filter(Boolean);
+            const leaveNum = item.leaveRate != null ? Number(item.leaveRate) : (job.leaveRate != null ? Number(job.leaveRate) : null);
+            const empCount = item.employeeCount ?? null;
+            const isBookmarked = bookmarks.has(jobId);
+            let statsHtml = '';
+            if (leaveNum !== null && !isNaN(leaveNum)) statsHtml += `<span class="stat-chip">퇴사율 <strong>${leaveNum.toFixed(1)}%</strong></span>`;
+            if (empCount != null && empCount > 0) {
+                let sizeClass, sizeLabel;
+                if (empCount >= 1000) {
+                    sizeClass = 'size-large';
+                    sizeLabel = '대기업';
+                } else if (empCount >= 300) {
+                    sizeClass = 'size-mid';
+                    sizeLabel = '중견기업';
+                } else if (empCount >= 50) {
+                    sizeClass = 'size-small';
+                    sizeLabel = '중소기업';
+                } else {
+                    sizeClass = 'size-start';
+                    sizeLabel = '스타트업';
+                }
+                statsHtml += `<span class="stat-chip ${sizeClass}">${sizeLabel} <strong>${Number(empCount).toLocaleString()}명</strong></span>`;
+            }
+            const safeCompany = (job.company || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const safeTitle = (job.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const deadlineHtml = getDeadlineBadge(job.description || '');
+            const companyHtml = highlight(job.company || '알 수 없음', keyword);
+            const titleHtml = highlight(job.title || '제목 없음', keyword);
+            const card = document.createElement('div');
+            card.className = 'job-card';
+            card.style.animationDelay = (idx * 0.04) + 's';
+            card.innerHTML = `
+                <button class="btn-bookmark ${isBookmarked ? 'bookmarked' : ''}" data-id="${jobId}" onclick="toggleBookmark(event,'${jobId}')">★</button>
+                <div class="card-rank ${idx < 3 ? 'top3' : ''}">${idx + 1}</div>
+                <div class="score-badge ${level}"><span class="dot"></span>${item.score}점 · ${getScoreLabel(item.score)}</div>
+                ${deadlineHtml}
+                <div class="card-company">${companyHtml}</div>
+                <div class="card-title">${titleHtml}</div>
+                ${statsHtml ? `<div class="card-company-stats">${statsHtml}</div>` : ''}
+                <div class="card-tags">
+                    ${job.jobType ? `<span class="tag">${job.jobType}</span>` : ''}
+                    ${stacks.map(s => `<span class="tag match">${highlight(s, keyword)}</span>`).join('')}
+                </div>
+                ${leaveNum !== null && leaveNum >= 20 ? `<div class="leave-warning">⚠️ 퇴사율이 높은 편입니다. 입사 전 근속 안정성을 확인해보세요.</div>` : ''}
+                ${renderMatchReason(item.matchReason)}
+                <div class="card-footer">
+                    <span class="card-location">📍 ${job.location || '미정'}</span>
+                    <button class="btn-apply" onclick="event.stopPropagation();applyJob('${job.id}','${safeCompany}','${safeTitle}')">지원하기</button>
+                </div>
+            `;
+            // ✅ 수정: URL 파라미터 방식으로 이동 (sessionStorage 제거)
+            card.onclick = () => {
+                sessionStorage.setItem('selectedJob', JSON.stringify({
+                    job: job, score: item.score, matchReason: item.matchReason || ''
+                }));
+                if (job.id && job.company) {
+                    fetch('/api/jobs/' + job.id + '/update-company', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({companyName: job.company})
+                    }).catch(() => {});
+                }
+                location.href = '/job-detail';
+            };
+            grid.appendChild(card);
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+                await loadUserInfo();
+                await loadJobs();
+
+                const params = new URLSearchParams(location.search);
+                if (params.get('filter') === 'starred') {
+                    activeFilters.bookmark = true;
+                    const btn = document.getElementById('bookmarkFilterBtn');
+                    if (btn) btn.classList.add('active');
+                    checkResetBtn();
+                }
+
+                if (allJobs.length) applyAll();
+            });
+
+            async function loadUserInfo() {
+                try {
+                    const res = await fetch('/api/members/me');
+                    if (!res.ok) {
+                        location.href = '/';
+                        return;
+                    }
+                    const data = await res.json();
+                    const name = data.name || data.email || '사용자';
+                    document.getElementById('userName').textContent = name + '님';
+                    document.getElementById('userAvatar').textContent = name.charAt(0);
+                    document.getElementById('drawerUserName').textContent = name + '님';
+                    document.getElementById('drawerAvatar').textContent = name.charAt(0);
+                } catch (e) {
+                    location.href = '/';
+                }
+            }
+
+            async function loadJobs() {
+                try {
+                    const res = await fetch('/api/jobs/match');
+                    if (!res.ok) throw new Error();
+                    allJobs = await res.json();
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('matchCount').textContent = allJobs.length;
+                    if (!allJobs.length) {
+                        openStackPopup();
+                        return;
+                    }
+                    applyAll(); // ✅ 추가
+                } catch (e) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('empty-state').style.display = 'block';
+                }
+            }
+
+            async function applyJob(jobId, company, title) {
+                try {
+                    const res = await fetch('/api/applications', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({companyName: company, jobTitle: title, status: 'APPLIED', memo: ''})
+                    });
+                    if (res.ok) alert('✅ 지원현황에 추가되었습니다!');
+                    else alert('❌ 이미 추가된 공고이거나 오류가 발생했습니다.');
+                } catch (e) {
+                    alert('오류가 발생했습니다.');
+                }
+            }
+
+            function openStackPopup() {
+                document.getElementById('stackPopup').classList.add('open');
+                document.querySelectorAll('.popup-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('selected')));
+            }
+
+            function closeStackPopup() {
+                document.getElementById('stackPopup').classList.remove('open');
+            }
+
+            async function saveStackFromPopup() {
+                const selected = [...document.querySelectorAll('.popup-chip.selected')].map(c => c.dataset.value);
+                if (!selected.length) {
+                    alert('최소 1개 이상 선택해주세요.');
+                    return;
+                }
+                try {
+                    const meRes = await fetch('/api/members/me');
+                    if (!meRes.ok) {
+                        location.href = '/profile-setup';
+                        return;
+                    }
+                    const me = await meRes.json();
+                    const profRes = await fetch('/api/members/' + me.id + '/profile');
+                    let existing = {};
+                    if (profRes.ok) existing = await profRes.json();
+                    const body = {
+                        desiredJob: existing.desiredJob || '백엔드',
+                        careerLevel: existing.careerLevel || '신입',
+                        techStack: selected.join(', '),
+                        location: existing.location || '',
+                        preferredLat: existing.preferredLat || null,
+                        preferredLng: existing.preferredLng || null,
+                        preferredAddress: existing.preferredAddress || '',
+                        maxDistanceKm: existing.maxDistanceKm || 20,
+                        minSalary: existing.minSalary || 3000,
+                        maxSalary: existing.maxSalary || 6000,
+                        weightJob: existing.weightJob || 40,
+                        weightStack: existing.weightStack || 30,
+                        weightLocation: existing.weightLocation || 20,
+                        weightSalary: existing.weightSalary || 10
+                    };
+                    await fetch('/api/members/' + me.id + '/profile', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(body)
+                    });
+                    closeStackPopup();
+                    loadJobs();
+                } catch (e) {
+                    location.href = '/profile-setup';
+                }
+            }
+
+            function toggleDrawer() {
+                document.getElementById('drawer').classList.contains('open') ? closeDrawer() : openDrawer();
+            }
+
+            function openDrawer() {
+                document.getElementById('drawer').classList.add('open');
+                document.getElementById('drawerOverlay').classList.add('open');
+                document.getElementById('hamburger').classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDrawer() {
+                document.getElementById('drawer').classList.remove('open');
+                document.getElementById('drawerOverlay').classList.remove('open');
+                document.getElementById('hamburger').classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    closeDrawer();
+                    closeStackPopup();
+                }
+            })
+
+            async function logout() {
+                await fetch('/api/members/logout', {method: 'POST'});
+                location.href = '/';
+            }
+</script>
+</body>
+</html>

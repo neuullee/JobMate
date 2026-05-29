@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMate - 면접 코칭</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #1e3a5f; --navy2: #162d4a; --navy-light: #2a4f80;
+            --accent: #3b82f6;
+            --bg: #f0f4f8; --surface: #ffffff;
+            --border: #d6e0ec; --text: #1a2a3a; --text-sub: #6b7f96;
+            --green: #16a34a; --radius: 14px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        header { background: linear-gradient(135deg, var(--navy2) 0%, var(--navy) 100%); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 20px rgba(30,58,95,0.3); }
+        header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+        .logo { color: white; font-size: 1.3rem; font-weight: 800; letter-spacing: 4px; text-decoration: none; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .user-chip { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:100px; padding:6px 14px; }
+        .user-avatar { width:26px; height:26px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; }
+        .user-name { color:#e2eaf4; font-size:13px; font-weight:500; }
+        .hamburger { width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; transition:background .2s; }
+        .hamburger:hover { background:rgba(255,255,255,0.2); }
+        .hamburger span { display:block; width:18px; height:2px; background:white; border-radius:2px; transition:all .3s; }
+        .hamburger.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+        .hamburger.open span:nth-child(2) { opacity:0; transform:scaleX(0); }
+        .hamburger.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+
+        .drawer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:300; opacity:0; visibility:hidden; transition:all .3s; }
+        .drawer-overlay.open { opacity:1; visibility:visible; }
+        .drawer { position:fixed; top:0; right:-320px; width:300px; height:100vh; background:white; z-index:400; display:flex; flex-direction:column; transition:right .35s cubic-bezier(0.34,1.56,0.64,1); box-shadow:-8px 0 40px rgba(0,0,0,0.15); }
+        .drawer.open { right:0; }
+        .drawer-header { background:linear-gradient(135deg,var(--navy2),var(--navy)); padding:24px 24px 20px; position:relative; flex-shrink:0; }
+        .drawer-header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+        .drawer-logo { color:white; font-size:1.1rem; font-weight:900; letter-spacing:4px; margin-bottom:16px; }
+        .drawer-user { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.1); border-radius:10px; padding:10px 14px; }
+        .drawer-avatar { width:38px; height:38px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:white; flex-shrink:0; }
+        .drawer-user-name { color:white; font-size:14px; font-weight:700; }
+        .drawer-user-sub { color:rgba(255,255,255,0.6); font-size:11px; margin-top:2px; }
+        .drawer-close { position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,0.15); border:none; color:white; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+        .drawer-close:hover { background:rgba(255,255,255,0.3); }
+        .drawer-nav { flex:1; padding:12px; overflow-y:auto; }
+        .drawer-section-label { font-size:10px; font-weight:700; color:var(--text-sub); letter-spacing:2px; text-transform:uppercase; padding:10px 12px 6px; }
+        .drawer-item { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; font-size:14px; font-weight:600; color:var(--text); cursor:pointer; text-decoration:none; transition:all .2s; margin-bottom:2px; }
+        .drawer-item:hover { background:#f0f4f8; color:var(--navy); }
+        .drawer-item.active { background:#eef4ff; color:var(--navy); }
+        .item-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+        .item-icon.blue{background:#dbeafe} .item-icon.green{background:#dcfce7} .item-icon.yellow{background:#fef3c7}
+        .item-icon.purple{background:#f3e8ff} .item-icon.pink{background:#fce7f3} .item-icon.indigo{background:#e0e7ff}
+        .item-text{flex:1} .item-desc{font-size:11px;color:var(--text-sub);font-weight:400;margin-top:1px;}
+        .drawer-divider { height:1px; background:var(--border); margin:8px 12px; }
+        .drawer-footer { padding:16px 12px; border-top:1px solid var(--border); flex-shrink:0; }
+        .btn-logout-drawer { width:100%; padding:12px; border-radius:12px; background:#fee2e2; color:#dc2626; border:1.5px solid #fecaca; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .btn-logout-drawer:hover { background:#fecaca; }
+
+        main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+        .main-col { min-width: 0; }
+        .page-title { margin-bottom: 32px; }
+        .page-title h1 { font-size: 22px; font-weight: 900; color: var(--navy); letter-spacing: -.3px; }
+        .page-title p { margin-top: 6px; font-size: 14px; color: var(--text-sub); }
+
+        .steps {
+            display: flex; align-items: center;
+            position: sticky; top: 62px; z-index: 100;
+            background: var(--bg); padding: 12px 20px;
+            border-radius: 12px; border: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(30,58,95,0.07);
+            margin-bottom: 24px;
+        }
+        .step-item { display: flex; align-items: center; gap: 8px; flex: 1; }
+        .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text-sub); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; transition: all .3s; flex-shrink: 0; }
+        .step-num.active { background: var(--navy); color: white; }
+        .step-num.done { background: var(--green); color: white; }
+        .step-label { font-size: 12px; color: var(--text-sub); font-weight: 600; transition: color .3s; }
+        .step-label.active { color: var(--navy); }
+        .step-divider { flex: 1; height: 2px; background: var(--border); margin: 0 8px; transition: background .3s; }
+        .step-divider.done { background: var(--green); }
+
+        .card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 20px; animation: fadeUp .3s ease; }
+        .card-title { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .step-badge { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:var(--navy); color:white; font-size:11px; font-weight:800; letter-spacing:.5px; flex-shrink:0; }
+
+        .job-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 16px; }
+        .job-chip { padding: 11px 16px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-sub); transition: all .2s; font-family: inherit; background: white; text-align: left; display: flex; align-items: center; gap: 10px; }
+        .job-chip:hover { border-color: var(--navy); color: var(--navy); background: #f0f4ff; }
+        .job-chip.selected { background: var(--navy); border-color: var(--navy); color: white; }
+        .job-chip.selected .chip-dot { background: white; }
+        .chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background .2s; }
+
+        .btn-primary { padding: 12px 28px; background: linear-gradient(135deg, var(--navy), var(--navy-light)); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(30,58,95,0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .question-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .question-item { padding: 14px 16px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; line-height: 1.6; cursor: pointer; transition: all .2s; display: flex; align-items: flex-start; gap: 10px; }
+        .question-item:hover { border-color: var(--navy); background: #f0f4ff; }
+        .question-item.selected { border-color: var(--navy); background: #eef4ff; font-weight: 600; }
+        .question-item .q-num { width: 22px; height: 22px; border-radius: 6px; background: var(--border); color: var(--text-sub); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+        .question-item.selected .q-num { background: var(--navy); color: white; }
+
+        .selected-q-box { padding: 12px 16px; background: #eef4ff; border-radius: 10px; border-left: 3px solid var(--navy); font-size: 13px; color: var(--navy); line-height: 1.6; margin-bottom: 14px; font-weight: 600; }
+        .answer-textarea { width: 100%; min-height: 130px; padding: 14px; border-radius: 10px; border: 1.5px solid var(--border); font-size: 14px; font-family: inherit; color: var(--text); outline: none; resize: vertical; line-height: 1.7; transition: border-color .2s; }
+        .answer-textarea:focus { border-color: var(--navy); }
+        .char-count { text-align: right; font-size: 12px; color: var(--text-sub); margin-top: 6px; margin-bottom: 14px; }
+
+        .score-card { display: flex; align-items: center; gap: 20px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+        .score-circle { width: 80px; height: 80px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; flex-shrink: 0; border: 4px solid; }
+        .score-circle.high { background: #dcfce7; color: #15803d; border-color: #86efac; }
+        .score-circle.mid  { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+        .score-circle.low  { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+        .score-circle span { font-size: 11px; font-weight: 600; margin-top: 2px; }
+        .score-info { flex: 1; }
+        .score-label { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+        .score-bar-wrap { margin-bottom: 8px; }
+        .score-bar { height: 10px; background: var(--border); border-radius: 100px; overflow: hidden; }
+        .score-bar-fill { height: 100%; border-radius: 100px; transition: width 1s ease; }
+        .score-bar-fill.high { background: linear-gradient(90deg, #16a34a, #4ade80); }
+        .score-bar-fill.mid  { background: linear-gradient(90deg, #b45309, #fbbf24); }
+        .score-bar-fill.low  { background: linear-gradient(90deg, #dc2626, #f87171); }
+        .score-comment { font-size: 13px; color: var(--text-sub); line-height: 1.6; font-style: italic; }
+
+        .feedback-sections { display: flex; flex-direction: column; gap: 14px; }
+        .feedback-section { border-radius: 10px; overflow: hidden; }
+        .feedback-section-title { padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .feedback-section-body { padding: 14px 16px; font-size: 14px; line-height: 1.9; color: var(--text); }
+        .feedback-section.good    .feedback-section-title { background: #dcfce7; color: #15803d; }
+        .feedback-section.good    { border: 1.5px solid #bbf7d0; }
+        .feedback-section.improve .feedback-section-title { background: #fef3c7; color: #b45309; }
+        .feedback-section.improve { border: 1.5px solid #fde68a; }
+        .feedback-section.model   .feedback-section-title { background: #dbeafe; color: #1d4ed8; }
+        .feedback-section.model   { border: 1.5px solid #bfdbfe; }
+        .feedback-label { font-size: 11px; font-weight: 700; color: #4a7fcb; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+        .loading-box { display: none; text-align: center; padding: 32px 0; }
+        .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--navy); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+        .loading-box p { font-size: 14px; color: var(--text-sub); }
+
+        .hidden { display: none !important; }
+        .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .btn-secondary { padding: 12px 24px; background: var(--bg); color: var(--navy); border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .2s; }
+        .btn-secondary:hover { border-color: var(--navy); background: #eef4ff; }
+
+        /* ── 히스토리 사이드바 ── */
+        .history-panel { position: sticky; top: 84px; }
+        .history-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+        .history-header { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .history-header h3 { font-size: 14px; font-weight: 700; color: var(--navy); }
+        .history-clear { font-size: 11px; color: var(--text-sub); background: none; border: none; cursor: pointer; font-family: inherit; padding: 3px 8px; border-radius: 6px; transition: all .2s; }
+        .history-clear:hover { background: #fee2e2; color: #dc2626; }
+        .history-empty { padding: 28px 18px; text-align: center; color: var(--text-sub); font-size: 13px; line-height: 1.7; }
+        .history-list { max-height: 400px; overflow-y: auto; }
+        .history-item { padding: 14px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .2s; }
+        .history-item:last-child { border-bottom: none; }
+        .history-item:hover { background: #f8faff; }
+        .hi-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+        .hi-job { font-size: 11px; font-weight: 700; color: var(--accent); }
+        .hi-score { font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 5px; }
+        .hi-score.high { background: #dcfce7; color: #15803d; }
+        .hi-score.mid  { background: #fef3c7; color: #b45309; }
+        .hi-score.low  { background: #fee2e2; color: #dc2626; }
+        .hi-score.none { background: var(--bg); color: var(--text-sub); }
+        .hi-question { font-size: 12px; color: var(--text); font-weight: 600; line-height: 1.4; margin-bottom: 4px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .hi-date { font-size: 11px; color: var(--text-sub); }
+
+        /* ── 직무별 통계 ── */
+        .job-stats-section { border-top: 1px solid var(--border); padding: 16px 18px; }
+        .job-stats-title { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .jstat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .jstat-name { font-size: 11px; color: var(--text-sub); width: 62px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+        .jstat-bar { flex: 1; height: 14px; background: #f0f4f8; border-radius: 100px; overflow: hidden; }
+        .jstat-fill { height: 100%; border-radius: 100px; transition: width .9s ease; }
+        .jstat-val { font-size: 11px; font-weight: 700; color: var(--navy); width: 32px; text-align: right; flex-shrink: 0; }
+        .jstat-best { font-size: 10px; color: var(--green); font-weight: 700; margin-top: 2px; }
+
+        
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:500; align-items:center; justify-content:center; }
+        .modal-overlay.open { display:flex; }
+        .modal { background:white; border-radius:16px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,0.18); animation:fadeUp .2s ease; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        @media(max-width:720px){
+            header{padding:0 16px}
+            main{grid-template-columns:1fr; padding:24px 16px 60px;}
+            .history-panel{position:static;}
+            .job-grid{grid-template-columns:1fr 1fr}
+            .steps{display:none}
+            .score-card{flex-direction:column;text-align:center}
+            .user-chip{display:none}
+        }
+    </style>
+</head>
+<body>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+    <div class="drawer-header">
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        <div class="drawer-logo">JOBMATE</div>
+        <div class="drawer-user">
+            <div class="drawer-avatar" id="drawerAvatar">?</div>
+            <div><div class="drawer-user-name" id="drawerUserName">불러오는 중...</div><div class="drawer-user-sub">로그인됨</div></div>
+        </div>
+    </div>
+    <!-- NAV FOR INTERVIEW -->
+    <nav class="drawer-nav">
+        <div class="drawer-section-label">메인 메뉴</div>
+        <a class="drawer-item" href="/dashboard"><div class="item-icon blue" style="background:#dbeafe"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div class="item-text"><div>대시보드</div><div class="item-desc">홈 화면으로 이동</div></div></a>
+        <a class="drawer-item" href="/jobs"><div class="item-icon green" style="background:#dcfce7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><div class="item-text"><div>공고 매칭</div><div class="item-desc">맞춤 채용공고 확인</div></div></a>
+        <a class="drawer-item" href="/community"><div class="item-icon indigo" style="background:#e0e7ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="item-text"><div>커뮤니티</div><div class="item-desc">개발자들과 소통하기</div></div></a>
+        <a class="drawer-item active" href="/interview"><div class="item-icon yellow" style="background:#fef3c7"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="item-text"><div>면접 코칭</div><div class="item-desc">AI 면접 질문 &amp; 피드백</div></div></a>
+        <a class="drawer-item" href="/interview-notes"><div class="item-icon note" style="background:#f5f3ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div><div class="item-text"><div>면접 오답노트</div><div class="item-desc">면접 질문·피드백 복습</div></div></a>
+        <a class="drawer-item" href="/cover-letter"><div class="item-icon teal" style="background:#ccfbf1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="12" y1="9" x2="8" y2="9"/></svg></div><div class="item-text"><div>이력서 · 자소서 관리</div><div class="item-desc">AI 피드백으로 자소서를 개선하세요</div></div></a>
+        <a class="drawer-item" href="/profile-setup"><div class="item-icon purple" style="background:#f3e8ff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div><div class="item-text"><div>맞춤 정보 설정</div><div class="item-desc">직무·기술스택·지역·연봉 설정</div></div></a>
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-label">설정</div>
+        <a class="drawer-item" href="/account"><div class="item-icon orange" style="background:#fff7ed"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="item-text"><div>계정 관리</div><div class="item-desc">비밀번호·개인정보 변경</div></div></a>
+    </nav>
+    <div class="drawer-footer"><button class="btn-logout-drawer" onclick="logout()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>로그아웃</button></div>
+</div>
+
+<header>
+    <a class="logo" href="/dashboard">JOBMATE</a>
+    <div class="header-right">
+        <div class="user-chip"><div class="user-avatar" id="userAvatar">?</div><span class="user-name" id="userName"></span></div>
+        <div class="hamburger" id="hamburger" onclick="toggleDrawer()"><span></span><span></span><span></span></div>
+    </div>
+</header>
+
+<main>
+    <!-- 왼쪽: 코칭 영역 -->
+    <div class="main-col">
+        <div class="page-title"><h1>AI 면접 코칭</h1><p>직무를 선택하면 AI가 예상 질문을 생성하고 맞춤 피드백을 제공합니다</p>
+        </div>
+
+        <div class="steps">
+            <div class="step-item"><div class="step-num active" id="sn1">1</div><span class="step-label active" id="sl1">직무 선택</span></div>
+            <div class="step-divider" id="sd1"></div>
+            <div class="step-item"><div class="step-num" id="sn2">2</div><span class="step-label" id="sl2">질문 선택</span></div>
+            <div class="step-divider" id="sd2"></div>
+            <div class="step-item"><div class="step-num" id="sn3">3</div><span class="step-label" id="sl3">답변 입력</span></div>
+            <div class="step-divider" id="sd3"></div>
+            <div class="step-item"><div class="step-num" id="sn4">4</div><span class="step-label" id="sl4">AI 피드백</span></div>
+        </div>
+
+        <div class="card" id="stepJob">
+            <div class="card-title"><span class="step-badge">01</span>직무 선택</div>
+            <div class="job-grid">
+                <button class="job-chip" onclick="selectJob(this,'백엔드 개발자 (Java/Spring)')"><span class="chip-dot"></span>백엔드 (Java/Spring)</button>
+                <button class="job-chip" onclick="selectJob(this,'프론트엔드 개발자')"><span class="chip-dot"></span>프론트엔드</button>
+                <button class="job-chip" onclick="selectJob(this,'풀스택 개발자')"><span class="chip-dot"></span>풀스택</button>
+                <button class="job-chip" onclick="selectJob(this,'Android 개발자')"><span class="chip-dot"></span>Android</button>
+                <button class="job-chip" onclick="selectJob(this,'iOS 개발자')"><span class="chip-dot"></span>iOS</button>
+                <button class="job-chip" onclick="selectJob(this,'DevOps 엔지니어')"><span class="chip-dot"></span>DevOps</button>
+                <button class="job-chip" onclick="selectJob(this,'데이터 엔지니어')"><span class="chip-dot"></span>데이터 엔지니어</button>
+                <button class="job-chip" onclick="selectJob(this,'AI/ML 엔지니어')"><span class="chip-dot"></span>AI/ML</button>
+            </div>
+            <div class="btn-row">
+                <button class="btn-primary" id="btnGenerate" onclick="generateQuestions()" disabled>예상 질문 생성 →</button>
+                <div id="setCounter" style="display:none; text-align:center; color:#888; font-size:13px; margin-top:8px;"></div>
+
+                <button id="nextSetBtn" onclick="generateQuestions()"
+                        style="display:none; margin-top:12px; width:100%; padding:12px;
+           background:#4f46e5; color:white; border:none; border-radius:8px;
+           font-size:15px; cursor:pointer;">
+                    ✅ 다음 세트 보기 →
+                </button>
+            </div>
+            <div class="loading-box" id="loadingQ"><div class="spinner"></div><p>AI가 질문을 생성하고 있습니다...</p></div>
+        </div>
+
+        <div class="card hidden" id="stepQuestion">
+            <div class="card-title"><span class="step-badge">02</span>질문 선택</div>
+            <ul class="question-list" id="questionList"></ul>
+        </div>
+
+        <div class="card hidden" id="stepAnswer">
+            <div class="card-title"><span class="step-badge">03</span>답변 입력</div>
+            <div class="selected-q-box" id="selectedQuestionLabel"></div>
+            <textarea class="answer-textarea" id="answerInput" placeholder="면접 답변을 입력해 주세요... (최소 50자 이상 입력하면 더 정확한 피드백을 받을 수 있습니다)" oninput="updateCharCount()"></textarea>
+            <div class="char-count" id="charCount">0자</div>
+            <div class="btn-row">
+                <button class="btn-primary" onclick="getFeedback()">AI 피드백 받기</button>
+                <button class="btn-secondary" onclick="resetAnswer()">← 다른 질문</button>
+            </div>
+            <div class="loading-box" id="loadingF"><div class="spinner"></div><p>AI가 피드백을 작성하고 있습니다...</p></div>
+        </div>
+
+        <div class="card hidden" id="stepFeedback">
+            <div class="card-title"><span class="step-badge">04</span>AI 피드백</div>
+            <div class="score-card" id="scoreCard">
+                <div class="score-circle" id="scoreCircle"><span id="scoreNum">-</span><span>/ 100</span></div>
+                <div class="score-info">
+                    <div class="score-label" id="scoreLabel">답변 점수</div>
+                    <div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill" id="scoreBarFill" style="width:0%"></div></div></div>
+                    <div class="score-comment" id="scoreComment"></div>
+                </div>
+            </div>
+            <div class="feedback-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>AI 분석 피드백</div>
+            <div class="feedback-sections" id="feedbackSections"></div>
+            <div class="btn-row">
+                <button class="btn-primary" onclick="generateQuestions()">새 질문 생성</button>
+                <button class="btn-secondary" onclick="resetAnswer()">← 다른 질문</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 오른쪽: 히스토리 + 통계 -->
+    <div class="history-panel">
+        <div class="history-card">
+            <div class="history-header">
+                <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>연습 히스토리</h3>
+                <button class="history-clear" onclick="clearHistory()">전체 삭제</button>
+            </div>
+            <!-- 직무별 통계 -->
+            <div class="job-stats-section" id="jobStatsSection" style="display:none">
+                <div class="job-stats-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-1px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>직무별 평균 점수</div>
+                <div id="jobStatsBars"></div>
+            </div>
+            <div id="historyBody">
+                <div class="history-empty">아직 연습 기록이 없어요.<br>면접 연습을 시작해보세요! </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    let selectedQuestion = '';
+    let currentJob = '';
+    const HISTORY_KEY = 'jm_interview_history';
+    let usedQuestions = [];
+    let questionSetCount = 0;
+
+    function loadHistory() { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+    function saveHistory(list) { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
+
+    function addHistory(job, question, score, comment, answer, feedback) {
+        const list = loadHistory();
+        list.unshift({ id: Date.now(), job, question, score, comment, answer: answer||'', feedback: feedback||'', date: new Date().toLocaleDateString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) });
+        if (list.length > 30) list.pop();
+        saveHistory(list);
+        renderHistory();
+        renderJobStats();
+    }
+
+    // ── 직무별 통계 렌더링 ──
+    function renderJobStats() {
+        const list = loadHistory();
+        const section = document.getElementById('jobStatsSection');
+        if (!list.length) { section.style.display = 'none'; return; }
+
+        const jobMap = {};
+        list.forEach(h => {
+            if (!h.job) return;
+            const key = h.job.split(' ')[0].substring(0, 5);
+            if (!jobMap[key]) jobMap[key] = { total: 0, scoreSum: 0, scoreCount: 0, best: 0 };
+            jobMap[key].total++;
+            if (h.score !== null && h.score !== undefined) {
+                jobMap[key].scoreSum += h.score;
+                jobMap[key].scoreCount++;
+                if (h.score > jobMap[key].best) jobMap[key].best = h.score;
+            }
+        });
+
+        const sorted = Object.entries(jobMap).sort((a, b) => b[1].total - a[1].total).slice(0, 4);
+        const maxAvg = Math.max(...sorted.map(([, d]) => d.scoreCount ? Math.round(d.scoreSum / d.scoreCount) : 0), 1);
+        const colors = ['#3b82f6', '#16a34a', '#f59e0b', '#8b5cf6'];
+
+        document.getElementById('jobStatsBars').innerHTML = sorted.map(([name, data], i) => {
+            const avg = data.scoreCount ? Math.round(data.scoreSum / data.scoreCount) : 0;
+            const pct = avg ? Math.round((avg / 100) * 100) : Math.round((data.total / Math.max(...sorted.map(e => e[1].total), 1)) * 100);
+            return `<div class="jstat-row">
+                <div class="jstat-name" title="${name}">${name}</div>
+                <div class="jstat-bar">
+                    <div class="jstat-fill" style="width:0%;background:${colors[i % colors.length]}" data-w="${pct}%"></div>
+                </div>
+                <div class="jstat-val">${data.scoreCount ? avg + '점' : data.total + '회'}</div>
+            </div>`;
+        }).join('');
+
+        section.style.display = 'block';
+        setTimeout(() => {
+            document.querySelectorAll('.jstat-fill').forEach(el => {
+                el.style.width = el.getAttribute('data-w');
+            });
+        }, 100);
+    }
+
+    function renderHistory() {
+        const list = loadHistory();
+        const body = document.getElementById('historyBody');
+        if (!list.length) {
+            body.innerHTML = '<div class="history-empty">아직 연습 기록이 없어요.<br>면접 연습을 시작해보세요! </div>';
+            return;
+        }
+        body.innerHTML = '<div class="history-list">' + list.map(h => {
+            const scoreLevel = h.score >= 70 ? 'high' : h.score >= 40 ? 'mid' : h.score ? 'low' : 'none';
+            return `<div class="history-item" onclick="loadHistoryItem(${h.id})" title="클릭하면 답변과 피드백을 볼 수 있어요">
+                <div class="hi-meta">
+                    <span class="hi-job">${h.job}</span>
+                    <span class="hi-score ${scoreLevel}">${h.score ? h.score + '점' : '-'}</span>
+                </div>
+                <div class="hi-question">${h.question}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+                    <div class="hi-date">${h.date}</div>
+                    <div style="font-size:10px;color:var(--accent);font-weight:600">${h.feedback ? '피드백 보기 →' : '기록 보기 →'}</div>
+                </div>
+            </div>`;
+        }).join('') + '</div>';
+    }
+
+    function loadHistoryItem(id) {
+        const list = loadHistory();
+        const item = list.find(h => h.id === id);
+        if (!item) return;
+        openHistoryModal(item);
+    }
+
+    function openHistoryModal(item) {
+        const scoreLevel = item.score >= 70 ? 'high' : item.score >= 40 ? 'mid' : item.score ? 'low' : 'none';
+        const scoreLabel = item.score >= 70 ? '우수' : item.score >= 40 ? '보통' : item.score ? '미흡' : '-';
+        const scoreColor = item.score >= 70 ? '#15803d' : item.score >= 40 ? '#b45309' : '#dc2626';
+        const scoreBg    = item.score >= 70 ? '#dcfce7' : item.score >= 40 ? '#fef3c7' : '#fee2e2';
+
+        document.getElementById('historyModalContent').innerHTML = `
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+                <span style="padding:3px 10px;border-radius:100px;background:#e0e7ff;color:#4f46e5;font-size:11px;font-weight:700">${escapeHtml(item.job)}</span>
+                ${item.score ? `<span style="padding:3px 10px;border-radius:100px;background:${scoreBg};color:${scoreColor};font-size:12px;font-weight:700">${item.score}점 · ${scoreLabel}</span>` : ''}
+                <span style="font-size:11px;color:var(--text-sub);margin-left:auto">${item.date}</span>
+            </div>
+            <div style="background:#eef4ff;border-left:3px solid var(--navy);border-radius:8px;padding:12px 14px;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:14px;line-height:1.6">Q. ${escapeHtml(item.question)}</div>
+            ${item.answer ? `
+            <div style="margin-bottom:14px">
+                <div style="font-size:11px;font-weight:700;color:var(--text-sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">내 답변</div>
+                <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;max-height:150px;overflow-y:auto">${escapeHtml(item.answer)}</div>
+            </div>` : ''}
+            ${item.feedback ? `
+            <div>
+                <div style="font-size:11px;font-weight:700;color:var(--text-sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">AI 피드백</div>
+                <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.9;color:var(--text);white-space:pre-wrap;max-height:200px;overflow-y:auto">${escapeHtml(item.feedback)}</div>
+            </div>` : '<div style="color:var(--text-sub);font-size:13px;text-align:center;padding:12px">피드백 기록이 없습니다.</div>'}
+        `;
+        document.getElementById('historyModal').classList.add('open');
+    }
+
+    function closeHistoryModal() {
+        document.getElementById('historyModal').classList.remove('open');
+    }
+
+    function clearHistory() {
+        if (!confirm('연습 기록을 모두 삭제할까요?')) return;
+        localStorage.removeItem(HISTORY_KEY);
+        renderHistory();
+        renderJobStats();
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/api/members/me');
+            if (!res.ok) { location.href = '/'; return; }
+            const data = await res.json();
+            const name = data.name || data.email || '사용자';
+            document.getElementById('userName').textContent = name + '님';
+            document.getElementById('userAvatar').textContent = name.charAt(0);
+            document.getElementById('drawerUserName').textContent = name + '님';
+            document.getElementById('drawerAvatar').textContent = name.charAt(0);
+        } catch { location.href = '/'; }
+        renderHistory();
+        renderJobStats();
+    });
+
+    function selectJob(el, job) {
+        document.querySelectorAll('.job-chip').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        currentJob = job;
+        document.getElementById('btnGenerate').disabled = false;
+    }
+
+    function updateCharCount() {
+        const len = document.getElementById('answerInput').value.length;
+        const el = document.getElementById('charCount');
+        el.textContent = len + '자';
+        el.style.color = len < 50 ? '#ef4444' : 'var(--text-sub)';
+    }
+
+    function setStep(active) {
+        [1,2,3,4].forEach(i => {
+            const n = document.getElementById('sn'+i), l = document.getElementById('sl'+i);
+            if (i < active)       { n.className = 'step-num done';   l.className = 'step-label';        n.textContent = '✓'; }
+            else if (i === active){ n.className = 'step-num active'; l.className = 'step-label active'; n.textContent = i; }
+            else                  { n.className = 'step-num';        l.className = 'step-label';        n.textContent = i; }
+        });
+        [1,2,3].forEach(i => { document.getElementById('sd'+i).className = 'step-divider' + (i < active ? ' done' : ''); });
+    }
+    function setStepAllDone() {
+        [1,2,3,4].forEach(i => {
+            const n = document.getElementById('sn'+i), l = document.getElementById('sl'+i);
+            n.className = 'step-num done'; l.className = 'step-label'; n.textContent = '✓';
+        });
+        [1,2,3].forEach(i => { document.getElementById('sd'+i).className = 'step-divider done'; });
+        const nextBtn = document.getElementById('nextSetBtn');
+        if (nextBtn) nextBtn.style.display = 'block';
+    }
+
+    async function generateQuestions() {
+        if (!currentJob) { alert('직무를 선택해 주세요.'); return; }
+        document.getElementById('loadingQ').style.display = 'block';
+        document.getElementById('stepQuestion').classList.add('hidden');
+        document.getElementById('stepAnswer').classList.add('hidden');
+        document.getElementById('stepFeedback').classList.add('hidden');
+        document.getElementById('btnGenerate').disabled = true;
+        setStep(1);
+
+        // 다음 세트 버튼 숨기기
+        const nextBtn = document.getElementById('nextSetBtn');
+        if (nextBtn) nextBtn.style.display = 'none';
+
+        questionSetCount++;
+
+        try {
+            // 이미 나온 질문 목록을 파라미터로 전달
+            const excludeParam = usedQuestions.length > 0
+                ? '&exclude=' + encodeURIComponent(JSON.stringify(usedQuestions))
+                : '';
+
+            const res = await fetch(`/api/interview/questions?jobCategory=${encodeURIComponent(currentJob)}${excludeParam}`);
+            const data = await res.json();
+            const lines = data.questions.split('\n').filter(l => l.trim());
+            const list = document.getElementById('questionList');
+            list.innerHTML = '';
+            lines.forEach((line, idx) => {
+                if (!line.trim()) return;
+                const li = document.createElement('li');
+                li.className = 'question-item';
+                li.innerHTML = `<div class="q-num">${idx+1}</div><span>${line.trim()}</span>`;
+                li.onclick = () => selectQuestion(li, line.trim());
+                list.appendChild(li);
+            });
+
+            // 이번 세트 질문 누적
+            usedQuestions.push(...lines.filter(l => l.trim()));
+
+            // 세트 카운터 업데이트
+            updateSetCounter();
+
+            document.getElementById('stepQuestion').classList.remove('hidden');
+            document.getElementById('stepQuestion').scrollIntoView({ behavior: 'smooth' });
+            setStep(2);
+        } catch { alert('질문 생성 중 오류가 발생했습니다.'); }
+        finally { document.getElementById('loadingQ').style.display = 'none'; document.getElementById('btnGenerate').disabled = false; }
+    }
+
+    function updateSetCounter() {
+        const counter = document.getElementById('setCounter');
+        if (!counter) return;
+        const start = (questionSetCount - 1) * 5 + 1;
+        const end = questionSetCount * 5;
+        counter.textContent = `세트 ${questionSetCount} | Q${start}~Q${end}`;
+        counter.style.display = 'block';
+    }
+
+    function selectQuestion(el, question) {
+        document.querySelectorAll('.question-item').forEach(q => q.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedQuestion = question;
+        document.getElementById('selectedQuestionLabel').textContent = 'Q. ' + question;
+        document.getElementById('answerInput').value = '';
+        document.getElementById('charCount').textContent = '0자';
+        document.getElementById('stepAnswer').classList.remove('hidden');
+        document.getElementById('stepFeedback').classList.add('hidden');
+        document.getElementById('stepAnswer').scrollIntoView({ behavior: 'smooth' });
+        setStep(3);
+    }
+
+    async function getFeedback() {
+        const answer = document.getElementById('answerInput').value.trim();
+        if (!answer) { alert('답변을 입력해 주세요.'); return; }
+        document.getElementById('loadingF').style.display = 'block';
+        document.getElementById('stepFeedback').classList.add('hidden');
+        try {
+            const res = await fetch('/api/interview/feedback', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ jobCategory: currentJob, question: selectedQuestion, answer }) });
+            const data = await res.json();
+            const score = renderFeedback(data.feedback);
+            const commentMatch = data.feedback.match(/한줄평[:\s]*(.+)/);
+            const comment = commentMatch ? commentMatch[1].trim() : '';
+            addHistory(currentJob, selectedQuestion, score, comment, answer, data.feedback);
+            document.getElementById('stepFeedback').classList.remove('hidden');
+            document.getElementById('stepFeedback').scrollIntoView({ behavior: 'smooth' });
+            setStepAllDone();
+        } catch { alert('피드백 생성 중 오류가 발생했습니다.'); }
+        finally { document.getElementById('loadingF').style.display = 'none'; }
+    }
+
+    function renderFeedback(feedbackText) {
+        const scoreMatch = feedbackText.match(/점수[^\d]*(\d+)/);
+        const commentMatch = feedbackText.match(/한줄평[:\s]*(.+)/);
+        const score   = scoreMatch   ? parseInt(scoreMatch[1])  : null;
+        const comment = commentMatch ? commentMatch[1].trim()   : '';
+        if (score !== null) {
+            const level = score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low';
+            const levelLabel = score >= 70 ? '우수한 답변' : score >= 40 ? '보통 수준의 답변' : '개선이 필요한 답변';
+            document.getElementById('scoreCircle').className = 'score-circle ' + level;
+            document.getElementById('scoreNum').textContent = score;
+            document.getElementById('scoreLabel').textContent = levelLabel;
+            document.getElementById('scoreComment').textContent = comment;
+            const fill = document.getElementById('scoreBarFill');
+            fill.className = 'score-bar-fill ' + level;
+            setTimeout(() => { fill.style.width = score + '%'; }, 100);
+            document.getElementById('scoreCard').style.display = 'flex';
+        } else {
+            document.getElementById('scoreCard').style.display = 'none';
+        }
+        const sections = [
+            { key: '[잘한 점]',        cls: 'good',    icon: '', title: '잘한 점' },
+            { key: '[개선할 점]',      cls: 'improve', icon: '', title: '개선할 점' },
+            { key: '[모범 답변 핵심]', cls: 'model',   icon: '', title: '모범 답변 핵심' },
+        ];
+        const container = document.getElementById('feedbackSections');
+        container.innerHTML = '';
+        sections.forEach((sec, idx) => {
+            const start = feedbackText.indexOf(sec.key);
+            if (start === -1) return;
+            const nextKeys = sections.slice(idx+1).map(s => s.key);
+            let end = feedbackText.length;
+            nextKeys.forEach(nk => { const pos = feedbackText.indexOf(nk, start); if (pos !== -1 && pos < end) end = pos; });
+            let content = feedbackText.substring(start + sec.key.length, end).trim();
+            content = content.replace(/\[답변 점수\][\s\S]*?(?=\[|$)/, '').trim();
+            if (!content) return;
+            const div = document.createElement('div');
+            div.className = 'feedback-section ' + sec.cls;
+            div.innerHTML = `<div class="feedback-section-title">${sec.icon} ${sec.title}</div><div class="feedback-section-body">${escapeHtml(content)}</div>`;
+            container.appendChild(div);
+        });
+        if (container.children.length === 0) {
+            container.innerHTML = `<div style="font-size:14px;line-height:1.9;white-space:pre-line;padding:16px;background:#f8faff;border-radius:10px;border:1.5px solid #d0e0f8;">${escapeHtml(feedbackText)}</div>`;
+        }
+        return score;
+    }
+
+    function escapeHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function resetAnswer() {
+        document.getElementById('stepAnswer').classList.add('hidden');
+        document.getElementById('stepFeedback').classList.add('hidden');
+        document.getElementById('answerInput').value = '';
+        document.querySelectorAll('.question-item').forEach(q => q.classList.remove('selected'));
+        document.getElementById('stepQuestion').scrollIntoView({ behavior: 'smooth' });
+        setStep(2);
+    }
+
+    function toggleDrawer() { document.getElementById('drawer').classList.contains('open') ? closeDrawer() : openDrawer(); }
+    function openDrawer() { document.getElementById('drawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); document.getElementById('hamburger').classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeDrawer() { document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); document.getElementById('hamburger').classList.remove('open'); document.body.style.overflow = ''; }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+    async function logout() { await fetch('/api/members/logout', { method: 'POST' }); location.href = '/'; }
+</script>
+
+<div class="modal-overlay" id="historyModal" onclick="if(event.target===this)closeHistoryModal()">
+    <div class="modal" style="width:520px;max-width:95vw;max-height:85vh;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h3 style="font-size:15px;font-weight:700;color:var(--navy)">연습 기록 상세</h3>
+            <button onclick="closeHistoryModal()" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--text-sub)">✕</button>
+        </div>
+        <div id="historyModalContent"></div>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+            <button onclick="closeHistoryModal()" style="padding:9px 18px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text-sub)">닫기</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>
